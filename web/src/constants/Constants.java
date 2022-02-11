@@ -5,6 +5,7 @@ public class Constants {
     public static final String USER_NAME_ERROR = "username_error";
     public static final String GPUP_MANAGER = "gpup_manager";
     public static final String USER_ROLE = "role";
+    public static final String NUMBER_OF_THREADS = "threads";
 
     public static final String CHAT_PARAMETER = "userstring";
     public static final String CHAT_VERSION_PARAMETER = "chatversion";

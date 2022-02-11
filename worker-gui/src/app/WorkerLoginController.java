@@ -55,7 +55,7 @@ public class WorkerLoginController {
                         Constants.FULL_SERVER_PATH + "/client-login")
                 .newBuilder()
                 .addQueryParameter("threads", String.valueOf(threads))
-                .addQueryParameter("userName", userName)
+                .addQueryParameter("username", userName)
                 .addQueryParameter("role", "worker")
                 .build()
                 .toString();
@@ -67,14 +67,15 @@ public class WorkerLoginController {
             }
 
             @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+            public void onResponse(@NotNull Call call, @NotNull Response response) {
                 if (response.code() != 200) {
                     FXUtil.handleErrors(
                             null,
                             "couldn't log in due to authentication errors pleas try again later",
                             "Error while logging in");
+                } else {
+                    Platform.runLater(() -> switchToDashBoard());
                 }
-                Platform.runLater(() -> switchToDashBoard());
             }
         });
     }
