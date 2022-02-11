@@ -19,10 +19,6 @@ public class GPUPManager {
 
     }
 
-    public void addUser(String jsessionid, String userName, String role) {
-        users.put(jsessionid, new User(userName, role));
-    }
-
     private void addEngine(String engineName, Engine engine) {
         GPUPEngines.put(engineName, engine);
     }
@@ -35,9 +31,11 @@ public class GPUPManager {
         return false;
     }
 
-    public String getUserFromJSID(String jsessionid) {
-        return users.get(jsessionid).username;
+    public boolean engineExists(String engineName) {
+        return GPUPEngines.containsKey(engineName);
     }
+
+    //
 
     public List<UserDto> getUsers() {
         List<UserDto> userDto = new ArrayList<>();
@@ -46,6 +44,16 @@ public class GPUPManager {
         });
         return userDto;
     }
+
+    public String getUserFromJSID(String jsessionid) {
+        return users.get(jsessionid).username;
+    }
+
+    public void addUser(String jsessionid, String userName, String role) {
+        users.put(jsessionid, new User(userName, role));
+    }
+
+    //
 
     public List<String> getLoadedGraphs() {
         return GPUPEngines.values().stream().map(Engine::getGraphName).collect(Collectors.toList());
@@ -57,5 +65,15 @@ public class GPUPManager {
 
     public List<InfoAboutTargetDTO> getInfoAboutAllTargets(String graphName) {
         return GPUPEngines.get(graphName).getInfoAboutAllTargets();
+    }
+
+    //
+
+    public List<String> getCircle(String engineName, String targetName) {
+        return GPUPEngines.get(engineName).findIfTargetIsInACircle(targetName);
+    }
+
+    public List<String> getAllTargets(String engineName) {
+        return GPUPEngines.get(engineName).getAllTargetNames();
     }
 }

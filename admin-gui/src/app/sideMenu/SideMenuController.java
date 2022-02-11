@@ -90,7 +90,7 @@ public class SideMenuController {
     @FXML
     private void OnFindCircleBtnClick(ActionEvent event) {
 
-        //appController.findAllCircles();
+        appController.findAllCircles();
     }
 
     @FXML
@@ -191,7 +191,7 @@ public class SideMenuController {
         currentFileInTask = appController.getActiveFile();
     }
 
-   public void graphVizBtnClicked(ActionEvent actionEvent) {
+    public void graphVizBtnClicked(ActionEvent actionEvent) {
    /*
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();

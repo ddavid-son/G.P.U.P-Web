@@ -1,5 +1,6 @@
 package app.mainScreen;
 
+import app.circleDisplay.CircleDisplayController;
 import app.graphTableView.GraphTableViewController;
 /*import app.circleDisplay.CircleDisplayController;
 import app.findAllPaths.FindAllPathsController;
@@ -60,11 +61,11 @@ public class ControlPanelController {
     public String themeCSSPath = "/resources/css/theme1.css";
 
     private File activeFile;
-    /*private ScrollPane serialSetScreen;
-    private final Engine execution = new Execution();
+    private ScrollPane serialSetScreen;
+    //private final Engine execution = new Execution();
     private final String FIND_ALL_PATHS_FXML_FILE = "/resources/fxml/findAllPaths.fxml";
     private final String CIRCLE_DISPLAY_FXML_FILE = "/resources/fxml/circleDisplay.fxml";
-*/
+
 
     public void setThemeCSSPath(String themeCSSPath) {
         this.themeCSSPath = themeCSSPath;
@@ -189,18 +190,16 @@ public class ControlPanelController {
         }
     }*/
 
-    /*public void findAllCircles() {
+    public void findAllCircles() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource(CIRCLE_DISPLAY_FXML_FILE);
             fxmlLoader.setLocation(url);
             Parent root = fxmlLoader.load(url.openStream());
             CircleDisplayController circleDisplay = fxmlLoader.getController();
-            circleDisplay.setAppController(this);
 
+            circleDisplay.setAppController(this, engineName);
             root.getStylesheets().add(themeCSSPath);
-            circleDisplay.displayCircles(execution.getAllTargetNames(), execution);
-
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -211,7 +210,7 @@ public class ControlPanelController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
+    }
 
     public Node getIcon(String resourceName) {
         return getIcon(resourceName, 50);

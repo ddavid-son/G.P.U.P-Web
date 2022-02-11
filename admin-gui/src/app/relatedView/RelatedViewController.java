@@ -39,22 +39,22 @@ public class RelatedViewController {
 
     @FXML
     void switchRelationTypeClicked(ActionEvent event) {
-/*        relationType = relationType == RelationType.DEPENDS_ON ?
+        relationType = relationType == RelationType.DEPENDS_ON ?
                 RelationType.REQUIRED_FOR :
                 RelationType.DEPENDS_ON;
         relationIndicatorBtn.setText(relationType.toString().replace("_", " "));
-        //whatIfSelection = execution.getWhatIf(whatIfSelection.getTargetName(), relationType);
+        // whatIfSelection = execution.getWhatIf(whatIfSelection.getTargetName(), relationType);
         whatIfList.getItems().setAll(filterNonImmediateCB.isSelected() ?
                 whatIfSelection.getAllImmediate() :
-                whatIfSelection.getAllRelated());*/
+                whatIfSelection.getAllRelated());
     }
 
     @FXML
     void filterBtn(ActionEvent event) {
 
     }
-/*
-    public void setAppController(ControlPanelController appController, Engine execution) {
+
+    /*public void setAppController(ControlPanelController appController, Engine execution) {
         this.appController = appController;
         this.execution = execution;
     }
@@ -76,6 +76,6 @@ public class RelatedViewController {
                 whatIfList.getItems().setAll(whatIfSelection.getAllRelated());
             }
         });
-    }
-*/
+    }*/
+
 }

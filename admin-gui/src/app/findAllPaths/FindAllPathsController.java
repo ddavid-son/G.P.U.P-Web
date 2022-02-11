@@ -39,7 +39,7 @@ public class FindAllPathsController {
 
     public void setAppController(ControlPanelController appController) {
 
-        //this.appController = appController;
+        this.appController = appController;
     }
 
     @FXML
@@ -89,6 +89,6 @@ public class FindAllPathsController {
                 }
             }
         });
-    }
-*/
+    }*/
+
 }
