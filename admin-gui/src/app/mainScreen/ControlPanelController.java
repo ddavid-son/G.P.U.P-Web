@@ -1,11 +1,13 @@
 package app.mainScreen;
 
 import app.circleDisplay.CircleDisplayController;
+import app.findAllPaths.FindAllPathsController;
 import app.graphTableView.GraphTableViewController;
 /*import app.circleDisplay.CircleDisplayController;
 import app.findAllPaths.FindAllPathsController;
 import app.relatedView.RelatedViewController;
 import app.serialSet.SerialSetController;*/
+import app.relatedView.RelatedViewController;
 import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
 import app.sideMenu.SideMenuController;
@@ -30,6 +32,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
 import java.awt.*;
@@ -38,6 +41,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ControlPanelController {
@@ -168,17 +172,18 @@ public class ControlPanelController {
         });
     }
 
-    /*public void findAllPaths() {
+    public void findAllPaths() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource(FIND_ALL_PATHS_FXML_FILE);
             fxmlLoader.setLocation(url);
             Parent root = fxmlLoader.load(url.openStream());
             FindAllPathsController PathFindPopUpWindow = fxmlLoader.getController();
-            PathFindPopUpWindow.setAppController(this);
-
             root.getStylesheets().add(themeCSSPath);
-            PathFindPopUpWindow.loadComboBoxes(execution.getAllTargetNames(), execution);
+
+            PathFindPopUpWindow.setAppController(this);
+            //PathFindPopUpWindow.loadComboBoxes(execution.getAllTargetNames(), execution);
+            getAllTargets(engineName, PathFindPopUpWindow::loadComboBoxes);
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -188,7 +193,38 @@ public class ControlPanelController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
+    }
+
+    public void getAllTargets(String engineName, Consumer<List<String>> allTargetsConsumer) {
+
+        String finalUrl = HttpUrl.parse(
+                        Constants.FULL_SERVER_PATH + "/get-all-targets")
+                .newBuilder()
+                .addQueryParameter("engine-name", engineName)
+                .toString();
+
+
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Error fetching targets");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.code() != 200) {
+                    handleErrors(null,
+                            "Could not acquire targets, please try again",
+                            "Error fetching targets");
+                } else {
+                    String s = response.body().string();
+                    Platform.runLater(() ->
+                            allTargetsConsumer.accept(HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType())));
+                }
+            }
+        });
+    }
 
     public void findAllCircles() {
         try {
@@ -199,6 +235,7 @@ public class ControlPanelController {
             CircleDisplayController circleDisplay = fxmlLoader.getController();
 
             circleDisplay.setAppController(this, engineName);
+            getAllTargets(engineName, circleDisplay::displayCircles);
             root.getStylesheets().add(themeCSSPath);
 
             Stage stage = new Stage();
@@ -224,16 +261,16 @@ public class ControlPanelController {
         return imageView;
     }
 
-    /*public void displayRelated() {
+    public void displayRelated() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource("/resources/fxml/relatedView.fxml");
             fxmlLoader.setLocation(url);
             Parent root = fxmlLoader.load(url.openStream());
             RelatedViewController relatedViewController = fxmlLoader.getController();
-            relatedViewController.setAppController(this, execution);
+            relatedViewController.setAppController(this);
 
-            relatedViewController.loadTargetList();
+            getAllTargets(engineName, relatedViewController::loadTargetList);
             root.getStylesheets().add(themeCSSPath);
 
             Stage stage = new Stage();
@@ -244,7 +281,7 @@ public class ControlPanelController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
+    }
 
     // -------------------------------------------------task methods-------------------------------------------------- //
     public boolean taskHasTargetsSelected() {
@@ -259,10 +296,10 @@ public class ControlPanelController {
         return true;
     }
 
-/*    public Engine getExecution() {
+    public String getEngineName() {
+        return engineName;
+    }
 
-        return execution;
-    }*/
 
     public void runTask(TaskArgs taskArgs) {
 

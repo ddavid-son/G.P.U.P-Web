@@ -38,6 +38,10 @@ public class CircleDisplayController {
     public void setAppController(ControlPanelController appController, String engineName) {
         this.appController = appController;
         this.engineName = engineName;
+        //getAllTargets(appController, engineName);
+    }
+
+   /* private void getAllTargets(ControlPanelController appController, String engineName) {
         String finalUrl = HttpUrl.parse(
                         Constants.FULL_SERVER_PATH + "/get-all-targets")
                 .newBuilder()
@@ -66,8 +70,7 @@ public class CircleDisplayController {
                 }
             }
         });
-    }
-
+    }*/
 
     public void displayCircles(List<String> allTargetNames) {
         //targetChooserBox.getChildren().addAll(createTextFields(allTargetNames, execution));

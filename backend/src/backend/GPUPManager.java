@@ -1,8 +1,10 @@
 package backend;
 
+import argumentsDTO.CommonEnums.RelationType;
 import dataTransferObjects.GraphInfoDTO;
 import dataTransferObjects.InfoAboutTargetDTO;
 import dataTransferObjects.UserDto;
+import dataTransferObjects.WhatIfDTO;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +35,13 @@ public class GPUPManager {
 
     public boolean engineExists(String engineName) {
         return GPUPEngines.containsKey(engineName);
+    }
+
+    public Engine getEngineByName(String engineName) {
+        if (engineExists(engineName)) {
+            return GPUPEngines.get(engineName);
+        }
+        return null;
     }
 
     //
@@ -75,5 +84,21 @@ public class GPUPManager {
 
     public List<String> getAllTargets(String engineName) {
         return GPUPEngines.get(engineName).getAllTargetNames();
+    }
+
+    //
+
+    public List<String> getAllPaths(String engineName, String src, String dst) {
+        return GPUPEngines.get(engineName)
+                .findAllPathsBetweenTargets(src, dst).stream()
+                .map(path -> String.join(" -> ", path))
+                .collect(Collectors.toList());
+    }
+
+    public WhatIfDTO getRelated(String engineName, String targetName, String relation) {
+        return GPUPEngines.get(engineName).getWhatIf(targetName, "DEPENDS_ON".equals(relation) ?
+                RelationType.DEPENDS_ON :
+                RelationType.REQUIRED_FOR
+        );
     }
 }

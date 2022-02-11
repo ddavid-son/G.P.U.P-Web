@@ -2,17 +2,24 @@
 package app.findAllPaths;
 
 import app.mainScreen.ControlPanelController;
+import app.util.http.HttpClientUtil;
+import com.google.gson.reflect.TypeToken;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
 import javafx.scene.text.Text;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
+import okhttp3.Response;
+import org.jetbrains.annotations.NotNull;
+import resources.Constants;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class FindAllPathsController {
     @FXML
@@ -28,6 +35,7 @@ public class FindAllPathsController {
     private ListView<String> pathsListView;
 
     private ControlPanelController appController;
+    private String engineName;
 
     @FXML
     void OnDstCBDrop(ActionEvent event) {
@@ -38,57 +46,83 @@ public class FindAllPathsController {
     }
 
     public void setAppController(ControlPanelController appController) {
-
+        this.engineName = appController.getEngineName();
         this.appController = appController;
     }
 
     @FXML
     public void OnSwapSrcToDestBtn(ActionEvent event) {
         String src = srcComboBox.getValue();
-        srcComboBox.setValue(dstComboBox.getValue());
+        String dst = dstComboBox.getValue();
+        //swapping safely to not fire unwanted http request
+        srcComboBox.setValue("");
         dstComboBox.setValue(src);
+        srcComboBox.setValue(dst);
     }
 
-    /*public void loadComboBoxes(List<String> allTargetNames, Engine execution) {
+    public void loadComboBoxes(List<String> allTargetNames) {
         srcComboBox.getItems().addAll(allTargetNames);
         dstComboBox.getItems().addAll(allTargetNames);
 
-        setSrcComboBoxListener(execution);
-        setDstComboBoxListener(execution);
+        setSrcComboBoxListener();
+        setDstComboBoxListener();
 
-        pathsListView.setPlaceholder((Node) new Text("No paths found"));
+        pathsListView.setPlaceholder(new Text("No paths found"));
     }
 
-    private void setSrcComboBoxListener(Engine execution) {
+    private void setSrcComboBoxListener() {
         srcComboBox.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
-            if (newValue != null && !newValue.equals(oldValue) && !newValue.isEmpty()) {
-                try {
-                    Set<List<String>> allPaths = execution.findAllPathsBetweenTargets(newValue, dstComboBox.getValue());
-                    List<String> res = allPaths.stream()
-                            .map(path -> String.join(" -> ", path))
-                            .collect(Collectors.toList());
-                    pathsListView.getItems().setAll(res);
-                } catch (Exception e) {
-                    //TODO: handle exception - not really needed
-                }
+            if (newValue != null && !newValue.equals(oldValue) && !newValue.isEmpty()
+                    && dstComboBox.getValue() != null && !dstComboBox.getValue().isEmpty()) {
+                fetchAllPaths(newValue, dstComboBox.getValue());
             }
         });
     }
 
-    private void setDstComboBoxListener(Engine execution) {
+    private void setDstComboBoxListener() {
         dstComboBox.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
-            if (newValue != null && !newValue.equals(oldValue) && !newValue.isEmpty()) {
-                try {
-                    Set<List<String>> allPaths = execution.findAllPathsBetweenTargets(srcComboBox.getValue(), newValue);
-                    List<String> res = allPaths.stream()
-                            .map(path -> String.join(" -> ", path))
-                            .collect(Collectors.toList());
-                    pathsListView.getItems().setAll(res);
-                } catch (Exception e) {
-                    //TODO: handle exception not really needed
+            if (newValue != null && !newValue.equals(oldValue) && !newValue.isEmpty()
+                    && srcComboBox.getValue() != null && !srcComboBox.getValue().isEmpty()) {
+                fetchAllPaths(srcComboBox.getValue(), newValue);
+            }
+        });
+    }
+
+    private void updateAllPathsView(List<String> allPaths) {
+        Platform.runLater(() -> {
+            pathsListView.getItems().setAll(allPaths);
+        });
+    }
+
+    private void fetchAllPaths(String src, String dst) {
+
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-all-paths")
+                .newBuilder()
+                .addQueryParameter("engine-name", engineName)
+                .addQueryParameter("src-target", src)
+                .addQueryParameter("dst-target", dst)
+                .build()
+                .toString();
+
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                appController.handleErrors(e, "", "Couldn't fetch data from server");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.code() != 200) {
+                    String s = response.body().string();
+                    appController.handleErrors(null, s, "Error fetching all Paths");
+                } else {
+                    String s = response.body().string();
+                    updateAllPathsView(
+                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType())
+                    );
                 }
             }
         });
-    }*/
-
+    }
 }

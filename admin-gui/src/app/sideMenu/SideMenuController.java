@@ -83,8 +83,7 @@ public class SideMenuController {
 
     @FXML
     private void OnDisplayRelatedBtnClick(ActionEvent event) {
-        //execution.makeGraphUsingGraphViz(); // TODO: uncomment this line - GraphViz
-        //appController.displayRelated();
+        appController.displayRelated();
     }
 
     @FXML
@@ -96,7 +95,7 @@ public class SideMenuController {
     @FXML
     private void OnFindPathBtnClick(ActionEvent event) {
 
-        //appController.findAllPaths();
+        appController.findAllPaths();
     }
 
     @FXML
