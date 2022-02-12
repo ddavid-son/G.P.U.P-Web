@@ -66,11 +66,12 @@ public class ControlPanelController {
 
     private File activeFile;
     private ScrollPane serialSetScreen;
-    //private final Engine execution = new Execution();
     private final String FIND_ALL_PATHS_FXML_FILE = "/resources/fxml/findAllPaths.fxml";
     private final String CIRCLE_DISPLAY_FXML_FILE = "/resources/fxml/circleDisplay.fxml";
+    private ScrollPane dashboard;
 
 
+    // ---------------------------------------------------- Utils --------------------------------------------------- //
     public void setThemeCSSPath(String themeCSSPath) {
         this.themeCSSPath = themeCSSPath;
         sideMenuComponentController.setThemeCSSPath(themeCSSPath);
@@ -90,13 +91,26 @@ public class ControlPanelController {
         }
     }
 
+    public Node getIcon(String resourceName) {
+        return getIcon(resourceName, 50);
+    }
+
+    public Node getIcon(String resourceName, int size) {
+        Image image = new Image("/resources/icons" + resourceName);
+        ImageView imageView = new ImageView(image);
+        imageView.setFitHeight(size);
+        imageView.setFitWidth(size);
+        return imageView;
+    }
+
     protected void setAllComponentsToDisabled() {
         graphTableViewComponentController.setAllComponentsToDisabled();
         sideMenuComponentController.setAllComponentsToDisabled(false);
     }
 
-    public void setControlPanel(String engineName) {
+    public void setControlPanel(String engineName, ScrollPane dashboard) {
         this.engineName = engineName;
+        this.dashboard = dashboard;
         fetchDTOsForAdmin();
     }
 
@@ -118,6 +132,13 @@ public class ControlPanelController {
         }
     }
 
+    public void goToDashboard() {
+        ((Stage) mainScreen.getScene().getWindow()).setScene(dashboard.getScene());
+    }
+    // ---------------------------------------------------- Utils --------------------------------------------------- //
+
+
+    // -------------------------------------------------- EX2 ADDONS ------------------------------------------------ //
     private void fetchDTOsForAdmin() {
         String finalUrl = Constants.FULL_SERVER_PATH + "/get-dtos-for-admin" + "?graph-name=" + engineName;
 
@@ -249,18 +270,6 @@ public class ControlPanelController {
         }
     }
 
-    public Node getIcon(String resourceName) {
-        return getIcon(resourceName, 50);
-    }
-
-    public Node getIcon(String resourceName, int size) {
-        Image image = new Image("/resources" + resourceName);
-        ImageView imageView = new ImageView(image);
-        imageView.setFitHeight(size);
-        imageView.setFitWidth(size);
-        return imageView;
-    }
-
     public void displayRelated() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
@@ -282,6 +291,8 @@ public class ControlPanelController {
             e.printStackTrace();
         }
     }
+    // -------------------------------------------------- EX2 ADDONS ------------------------------------------------ //
+
 
     // -------------------------------------------------task methods-------------------------------------------------- //
     public boolean taskHasTargetsSelected() {

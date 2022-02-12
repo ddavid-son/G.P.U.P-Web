@@ -16,6 +16,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import okhttp3.*;
@@ -80,15 +81,19 @@ public class DashBoardController {
     private Button loadGraphBtn;
 
     @FXML
-    private Button goToGraphBtn;
+    private Label loggedInAs;
+
+    @FXML
+    private ScrollPane dashboardScrollPane;
 
     private final Timer timer = new Timer();
     private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
 
     // ---------------------------------------------------- init ---------------------------------------------------- //
-    public void setDashBoard() {
+    public void setDashBoard(String username) {
         initUserTable();
         scheduleUsersFetching();
+        this.loggedInAs.setText("Hello " + username + "!");
 
         scheduleGraphNameFetching();
         graphListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -209,7 +214,8 @@ public class DashBoardController {
                                     response.body().string(),
                                     new TypeToken<List<String>>() {
                                     }.getType());
-                    Platform.runLater(() -> graphListView.getItems().setAll(graphNames));
+                    if (graphNames.size() != graphListView.getItems().size())
+                        Platform.runLater(() -> graphListView.getItems().setAll(graphNames));
                 }
             }
         });
@@ -237,7 +243,7 @@ public class DashBoardController {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
+                if (response.code() == 200) {
                     updateUsersList(
                             HttpClientUtil.GSON.fromJson(
                                     response.body().string(),
@@ -250,6 +256,8 @@ public class DashBoardController {
     }
 
     private void updateUsersList(List<UserDto> usersNames) {
+        if (usersNames.size() == userHistoryObsList.size())
+            return;
         Platform.runLater(() -> {
             //userHistoryObsList = usersTable.getItems();
             userHistoryObsList.clear();
@@ -318,21 +326,13 @@ public class DashBoardController {
 
 
     // ---------------------------------------------- control panel --------------------------------------------------//
-    @FXML
-    void onGoToGraphBtnClicked(ActionEvent event) {
-
-    }
-
     public void goToGraph(String graphName) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/fxml/mainScreen.fxml"));
             Parent root = loader.load();
             ControlPanelController graphController = loader.getController();
-            graphController.setControlPanel(graphName);
-            Stage stage = new Stage();
-            stage.setTitle(graphName + " Control Panel");
-            stage.setScene(new Scene(root));
-            stage.show();
+            graphController.setControlPanel(graphName, dashboardScrollPane);
+            ((Stage) dashboardScrollPane.getScene().getWindow()).setScene(new Scene(root));
         } catch (IOException e) {
             e.printStackTrace();
         }

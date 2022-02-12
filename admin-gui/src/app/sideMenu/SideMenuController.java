@@ -5,16 +5,12 @@ import argumentsDTO.CommonEnums.*;
 //import app.graphVizForm.GraphVizFormController;
 import app.mainScreen.ControlPanelController;
 import app.taskForm.TaskFormController;
-//import backend.Engine;
-//import backend.argumentsDTO.TaskArgs;
-import argumentsDTO.CommonEnums;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -29,7 +25,7 @@ public class SideMenuController {
     public Button graphVizBtn;
 
     @FXML
-    private Button loadXMLBtn;
+    private Button goToDashboardBtn;
 
     @FXML
     private Button findPathBtn;
@@ -49,24 +45,12 @@ public class SideMenuController {
     private final String TASK_FORM_FXML = "/resources/fxml/TaskForm.fxml";
     private final String GRAPH_VIZ_FORM = "/resources/fxml/graphVizForm.fxml";
 
-    //private Engine execution;
     public TaskType taskType;
-
     private File currentFileInTask = new File("");
 
     @FXML
-    private void OnLoadBtnClick(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Load XML File");
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("XML Files", "*.XML")
-        );
-        File selectedFile = fileChooser.showOpenDialog(null);
-        if (selectedFile != null) {
-            //appController.setControlPanel(selectedFile)
-            // \;
-        }
-        //execution = appController.getExecution();
+    private void onGoToDashboardBtnClicked(ActionEvent event) {
+        appController.goToDashboard();
     }
 
     public String setCssAccordingToTheme() {
@@ -113,8 +97,8 @@ public class SideMenuController {
             root.getStylesheets().add(appController.themeCSSPath);
             taskFormController.setAppController(appController, this);
             taskFormController.setTaskController(
-                    /*execution.getMaxThreadCount()*/5,
-                    /*execution.incrementalAvailable()*/false,
+                    5,
+                    false,
                     currentFileInTask.equals(appController.getActiveFile())
             );
 
@@ -130,7 +114,7 @@ public class SideMenuController {
     }
 
     public void setAllComponentsToDisabled(boolean disableXmlLoadBtn) {
-        loadXMLBtn.setDisable(disableXmlLoadBtn);
+        goToDashboardBtn.setDisable(disableXmlLoadBtn);
         findPathBtn.setDisable(true);
         findCircleBtn.setDisable(true);
         displayRelatedBtn.setDisable(true);
@@ -139,7 +123,7 @@ public class SideMenuController {
     }
 
     public void setAllComponentsToEnabled() {
-        loadXMLBtn.setDisable(false);
+        goToDashboardBtn.setDisable(false);
         findPathBtn.setDisable(false);
         findCircleBtn.setDisable(false);
         displayRelatedBtn.setDisable(false);
@@ -153,13 +137,13 @@ public class SideMenuController {
     }
 
     private void setButtonsIcon() {
-        loadXMLBtn.setGraphic(appController.getIcon("/icons/xmlIcon1.png"));
-        findPathBtn.setGraphic(appController.getIcon("/icons/pathIcon1.png"));
-        findCircleBtn.setGraphic(appController.getIcon("/icons/circleIcon.png"));
-        displayRelatedBtn.setGraphic(appController.getIcon("/icons/relatedIcon1.png"));
-        runTaskBtn.setGraphic(appController.getIcon("/icons/launchIcon.png"));
-        settingBtn.setGraphic(appController.getIcon("/icons/settingIcon.png"));
-        graphVizBtn.setGraphic(appController.getIcon("/icons/gvIcon.png"));
+        goToDashboardBtn.setGraphic(appController.getIcon("/dashboardIcon.png"));
+        findPathBtn.setGraphic(appController.getIcon("/pathIcon1.png"));
+        findCircleBtn.setGraphic(appController.getIcon("/circleIcon.png"));
+        displayRelatedBtn.setGraphic(appController.getIcon("/relatedIcon1.png"));
+        runTaskBtn.setGraphic(appController.getIcon("/launchIcon.png"));
+        settingBtn.setGraphic(appController.getIcon("/settingIcon.png"));
+        graphVizBtn.setGraphic(appController.getIcon("/gvIcon.png"));
     }
 
     @FXML

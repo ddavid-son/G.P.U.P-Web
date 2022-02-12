@@ -89,7 +89,7 @@ public class LoginController {
             Parent root = fxmlLoader.load(url.openStream());
             Scene scene = new Scene(root);
             DashBoardController controller = fxmlLoader.getController();
-            controller.setDashBoard();
+            controller.setDashBoard(userNameTextField.getText());
             primaryStage.setScene(scene);
         } catch (IOException e) {
             e.printStackTrace();
