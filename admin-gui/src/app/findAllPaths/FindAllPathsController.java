@@ -89,9 +89,7 @@ public class FindAllPathsController {
     }
 
     private void updateAllPathsView(List<String> allPaths) {
-        Platform.runLater(() -> {
-            pathsListView.getItems().setAll(allPaths);
-        });
+        Platform.runLater(() -> pathsListView.getItems().setAll(allPaths));
     }
 
     private void fetchAllPaths(String src, String dst) {

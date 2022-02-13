@@ -1,9 +1,6 @@
 package servlets;
 
-import backend.GPUPManager;
 import com.google.gson.reflect.TypeToken;
-import com.sun.deploy.net.HttpUtils;
-import jakarta.servlet.ServletContext;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,7 +9,6 @@ import utils.ServletUtils;
 import utils.SessionUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet(name = "TargetCircleServlet", urlPatterns = "/find-circle")

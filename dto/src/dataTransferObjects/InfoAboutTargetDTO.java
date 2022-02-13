@@ -3,7 +3,6 @@ package dataTransferObjects;
 import argumentsDTO.CommonEnums.*;
 import javafx.scene.control.CheckBox;
 
-import javax.sound.sampled.Line;
 import java.util.List;
 
 public class InfoAboutTargetDTO {
@@ -28,10 +27,9 @@ public class InfoAboutTargetDTO {
     public InfoAboutTargetDTO() {
     }
 
-    public String getTargetTypeString(){
+    public String getTargetTypeString() {
         return this.targetType.toString();
     }
-
 
 
     public List<String> requiredForNames;

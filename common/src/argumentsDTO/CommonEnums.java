@@ -15,4 +15,13 @@ public class CommonEnums {
         DEPENDS_ON,
         REQUIRED_FOR
     }
+
+    public enum TaskStatus {
+        NEW,     // CREATED
+        ACTIVE,  // PLAYED
+        PAUSED,
+        STOPPED,
+        FINISHED
+    }
+
 }

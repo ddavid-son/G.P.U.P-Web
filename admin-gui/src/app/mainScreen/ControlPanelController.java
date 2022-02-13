@@ -149,12 +149,12 @@ public class ControlPanelController {
 
         HttpClientUtil.runAsync(request, new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 handleErrors(e, "", "Error fetching  data");
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.code() != 200) {
                     String errorMessage = response.body().string();
                     handleErrors(null, errorMessage, "Error fetching execution data");

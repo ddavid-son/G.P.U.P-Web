@@ -2,7 +2,6 @@ package app.main;
 
 import app.WorkerLoginController;
 import javafx.application.Application;
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -33,7 +32,7 @@ public class WorkerApp extends Application {
 
             primaryStage.setScene(loginScene);
             primaryStage.show();
-            
+
         } catch (IOException e) {
             e.printStackTrace();
         }

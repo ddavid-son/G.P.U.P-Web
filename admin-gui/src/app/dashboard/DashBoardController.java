@@ -16,7 +16,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import okhttp3.*;
@@ -157,7 +156,7 @@ public class DashBoardController {
 
         Callback cb = new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 handleErrors(
                         e,
                         "",
@@ -166,7 +165,7 @@ public class DashBoardController {
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NotNull Call call, Response response) throws IOException {
                 if (response.code() != 200) {
                     handleErrors(
                             null,
@@ -176,9 +175,7 @@ public class DashBoardController {
                 } else {
                     String responseString = response.body().string();
                     GraphInfoDTO graphInfoDTO = HttpClientUtil.GSON.fromJson(responseString, GraphInfoDTO.class);
-                    Platform.runLater(() -> {
-                        initGraphPeekTable(graphInfoDTO);
-                    });
+                    Platform.runLater(() -> initGraphPeekTable(graphInfoDTO));
                 }
             }
         };
@@ -202,12 +199,12 @@ public class DashBoardController {
         String finalUrl = Constants.FULL_SERVER_PATH + "/get-graphs-names";
         HttpClientUtil.runAsync(finalUrl, new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 System.out.println("Error: " + e);
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     List<String> graphNames =
                             HttpClientUtil.GSON.fromJson(
@@ -237,12 +234,12 @@ public class DashBoardController {
         String finalUrl = Constants.FULL_SERVER_PATH + "/usersHistory";
         HttpClientUtil.runAsync(finalUrl, new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 System.out.println("Error: " + e);
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.code() == 200) {
                     updateUsersList(
                             HttpClientUtil.GSON.fromJson(
@@ -276,13 +273,13 @@ public class DashBoardController {
             Request request = buildRequest(selectedFile);
             HttpClientUtil.runAsync(request, new Callback() {
                 @Override
-                public void onFailure(Call call, IOException e) {
+                public void onFailure(@NotNull Call call, @NotNull IOException e) {
                     System.out.println(call.request().body().toString());
                     handleErrors(e, e.getMessage(), "Error loading graph");
                 }
 
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                     if (response.code() != 200) {
                         String errorMessage = response.body().string();
                         handleErrors(null, errorMessage, "Error loading graph");

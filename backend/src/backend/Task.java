@@ -148,9 +148,7 @@ public abstract class Task implements Serializable {
                     targetToExecute.state = TargetState.IN_PROCESS;
                     targetToExecute.enterProcess = System.currentTimeMillis();
                     resOfTargetTaskRun = new accumulatorForWritingToFile();
-                    Platform.runLater(() -> {
-                        finishedTarget.accept(new ProgressDto(targetToExecute.name, TargetState.IN_PROCESS));
-                    });
+                    Platform.runLater(() -> finishedTarget.accept(new ProgressDto(targetToExecute.name, TargetState.IN_PROCESS)));
                     accumulatorForWritingToFile finalResOfTargetTaskRun = resOfTargetTaskRun;
                     sendToNewThreadAndPushToPool(print, fullPath, targetToExecute, finalResOfTargetTaskRun);
                 }

@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 
 public class GPUPManager {
-    private Map<String, Engine> GPUPEngines = new HashMap<String, Engine>();
+    private Map<String, Engine> GPUPEngines = new HashMap<>();
     private Map<String, User> users = new HashMap<>(); // jsessionid -> user name // now with username cookie this is no longer necessary
 
     public GPUPManager() {

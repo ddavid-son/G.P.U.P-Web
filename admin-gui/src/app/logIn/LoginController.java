@@ -42,6 +42,8 @@ public class LoginController {
     private void loginButtonClicked(ActionEvent event) {
 
         String userName = userNameTextField.getText();
+        userName = userName.replaceAll("[^a-zA-Z0-9]", ""); // tell user you filtered his name
+
         if (userName.isEmpty()) {
             errorMessageProperty.set("User name is empty. You can't login with empty user name");
             return;
@@ -68,14 +70,12 @@ public class LoginController {
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.code() != 200) {
                     String responseBody = response.body().string();
+                    response.body().close();
                     Platform.runLater(() ->
                             errorMessageProperty.set("Something went wrong: " + responseBody)
                     );
                 } else {
-                    Platform.runLater(() -> {
-                        System.out.println(userName);
-                        switchToDashBoard();
-                    });
+                    Platform.runLater(() -> switchToDashBoard());
                 }
             }
         });
@@ -89,7 +89,7 @@ public class LoginController {
             Parent root = fxmlLoader.load(url.openStream());
             Scene scene = new Scene(root);
             DashBoardController controller = fxmlLoader.getController();
-            controller.setDashBoard(userNameTextField.getText());
+            controller.setDashBoard(userNameTextField.getText().replaceAll("[^a-zA-Z0-9]", ""));
             primaryStage.setScene(scene);
         } catch (IOException e) {
             e.printStackTrace();

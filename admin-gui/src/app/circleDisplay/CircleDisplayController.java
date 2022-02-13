@@ -74,9 +74,7 @@ public class CircleDisplayController {
 
     public void displayCircles(List<String> allTargetNames) {
         //targetChooserBox.getChildren().addAll(createTextFields(allTargetNames, execution));
-        Platform.runLater(() -> {
-            targetChooserBox.getChildren().addAll(createCircleNode(allTargetNames));
-        });
+        Platform.runLater(() -> targetChooserBox.getChildren().addAll(createCircleNode(allTargetNames)));
     }
 
     private List<StackPane> createCircleNode(List<String> allTargetNames) {
@@ -92,9 +90,7 @@ public class CircleDisplayController {
             circleNodes.add(stack);
         }
 
-        circleNodes.forEach(pane -> pane.setOnMouseClicked(event -> {
-            fetchCircle(pane.getId());
-        }));
+        circleNodes.forEach(pane -> pane.setOnMouseClicked(event -> fetchCircle(pane.getId())));
 
         return circleNodes;
     }
@@ -130,6 +126,7 @@ public class CircleDisplayController {
                     appController.handleErrors(null, response.message(), "Couldn't fetch circle data");
                 } else {
                     String[] s = response.body().string().split("~~~");
+                    response.body().close();
 
                     updateCircleView(s[0],
                             HttpClientUtil.GSON.fromJson(s[1], new TypeToken<List<String>>() {
