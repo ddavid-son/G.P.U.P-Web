@@ -72,5 +72,6 @@
     </orderEntry>
     <orderEntry type="module" module-name="backend" />
     <orderEntry type="module" module-name="dto" />
+    <orderEntry type="module" module-name="common" />
   </component>
 </module>

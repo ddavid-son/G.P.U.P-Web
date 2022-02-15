@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class GPUPManager {
     private Map<String, Engine> GPUPEngines = new HashMap<>();
     private Map<String, User> users = new HashMap<>(); // jsessionid -> user name // now with username cookie this is no longer necessary
+    private Map<String, TaskManager> tasks = new HashMap<>(); // taskName TO taskManager
 
     public GPUPManager() {
 
@@ -43,6 +44,18 @@ public class GPUPManager {
         }
         return null;
     }
+
+    //
+
+    public boolean addTask(TaskManager taskManager) {
+        if (!tasks.containsKey(taskManager.getTaskName())) {
+            tasks.put(taskManager.getTaskName(), taskManager);
+            return true;
+        }
+        // consider adding the task with updated name here
+        return false;
+    }
+
 
     //
 
@@ -100,5 +113,9 @@ public class GPUPManager {
                 RelationType.DEPENDS_ON :
                 RelationType.REQUIRED_FOR
         );
+    }
+
+    public List<String> getTasks() {
+        return new ArrayList<>(tasks.keySet());
     }
 }

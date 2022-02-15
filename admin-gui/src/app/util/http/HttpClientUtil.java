@@ -4,7 +4,10 @@ package app.util.http;
 import com.google.gson.Gson;
 import okhttp3.*;
 
+import java.io.IOException;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HttpClientUtil {
 
@@ -13,11 +16,12 @@ public class HttpClientUtil {
 
     private final static SimpleCookieManager simpleCookieManager = new SimpleCookieManager();
 
-    private final static OkHttpClient HTTP_CLIENT =
+    public final static OkHttpClient HTTP_CLIENT =
             new OkHttpClient.Builder()
                     .cookieJar(simpleCookieManager)
                     .followRedirects(false)
                     .build();
+
 
     public static void setCookieManagerLoggingFacility(Consumer<String> logConsumer) {
         simpleCookieManager.setLogData(logConsumer);
@@ -42,6 +46,15 @@ public class HttpClientUtil {
 
         call.enqueue(callback);
     }
+
+/*    public static void runSync(Request request, Callback callback) {
+        try {
+            Call call = HTTP_CLIENT.newCall(request); // THIS IS MADE BY THE JAT! -NOT IDEAL!
+            call.execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }*/
 
     public static void shutdown() {
         System.out.println("Shutting down HTTP CLIENT");

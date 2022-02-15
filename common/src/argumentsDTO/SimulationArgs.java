@@ -10,7 +10,7 @@ public class SimulationArgs extends TaskArgs {
 
     public SimulationArgs(double successRate, double warningRate, int sleepTime, int numOfThreads,
                           boolean isRandom, boolean isWhatIf, boolean isIncremental, RelationType relationType) {
-        super(isWhatIf, numOfThreads, CommonEnums.TaskType.SIMULATION, isIncremental, relationType);
+        super(isWhatIf, numOfThreads, TaskType.SIMULATION, isIncremental, relationType);
         this.successRate = successRate;
         this.warningRate = warningRate;
         this.sleepTime = sleepTime;

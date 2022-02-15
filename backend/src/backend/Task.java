@@ -20,25 +20,25 @@ import java.util.stream.Collectors;
 
 public abstract class Task implements Serializable {
 
-    Thread mainThread;
-    int maxParallelism;
-    int numberOfThreads;
-    boolean flag = false;
     int outOfWaiting = 0;
-    protected final String path;
-    ThreadPoolExecutor threadPool;
     int numberOfFinishedTargets = 0;
     boolean allGraphHasBeenProcessed;
     Consumer<ProgressDto> finishedTarget;
+    List<String> waitingList = new LinkedList<>();
+    Map<String, TaskTarget> graph = new HashMap<>();
+    Consumer<accumulatorForWritingToFile> finishedTargetLog;
+    private final String WORKING_DIR = "c:\\gpup-working-dir";
+    List<accumulatorForWritingToFile> logData = new LinkedList<>();
+
+    //probably will be removed
+    Thread mainThread;
+    int numberOfThreads;
+    boolean flag = false;
+    ThreadPoolExecutor threadPool;
     private int numberOfThreadActive = 0;
     final SerialSetManger serialSetManger;
     final Object monitorObj = new Object();
     BlockingQueue<Runnable> threadPoolTaskQueue;
-    List<String> waitingList = new LinkedList<>();
-    Map<String, TaskTarget> graph = new HashMap<>();
-    Consumer<accumulatorForWritingToFile> finishedTargetLog;
-    List<accumulatorForWritingToFile> logData = new LinkedList<>();
-
 
     public void pauseTask() {
         flag = true;
@@ -75,11 +75,8 @@ public abstract class Task implements Serializable {
 
     // ---------------------------------------------- ctor and utils ------------------------------------------------ //
     public Task(boolean allGraphHasBeenProcessed, SerialSetManger serialSetManger,
-                int numberOfThreads, GraphManager graphManager, String path,
-                Consumer<accumulatorForWritingToFile> finishedTargetLog, Consumer<ProgressDto> finishedTarget,
-                int maxParallelism) {
-        this.path = path;
-        this.maxParallelism = maxParallelism;
+                int numberOfThreads, GraphManager graphManager,
+                Consumer<accumulatorForWritingToFile> finishedTargetLog, Consumer<ProgressDto> finishedTarget) {
         this.numberOfThreads = numberOfThreads;
         this.serialSetManger = serialSetManger;
         this.allGraphHasBeenProcessed = allGraphHasBeenProcessed;
@@ -91,7 +88,7 @@ public abstract class Task implements Serializable {
         for (Target target : graphManager.getTargetArray()) {
             TaskTarget taskTarget = new TaskTarget(target);
             if (target.getState() == TargetState.WAITING) {
-                Platform.runLater(() -> finishedTarget.accept(new ProgressDto(target.getName(), target.getState())));
+                //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(target.getName(), target.getState())));
             }
             graph.put(target.getName(), taskTarget);
         }
@@ -108,7 +105,7 @@ public abstract class Task implements Serializable {
     }
 
     protected void setPoolSize() {
-        if (threadPool == null || threadPool.isShutdown()) {
+ /*       if (threadPool == null || threadPool.isShutdown()) {
             threadPool = new ThreadPoolExecutor(numberOfThreads, numberOfThreads,
                     1, TimeUnit.MILLISECONDS, threadPoolTaskQueue == null ?
                     new LinkedBlockingQueue<>() :
@@ -117,14 +114,14 @@ public abstract class Task implements Serializable {
             return;
         }
         threadPool.setCorePoolSize(numberOfThreads);
-        threadPool.setMaximumPoolSize(numberOfThreads);
+        threadPool.setMaximumPoolSize(numberOfThreads);*/
     }
 
     public void changeNumberOfThreads(int newThreadsCount) {
-        if (newThreadsCount != numberOfThreads && newThreadsCount > 0 && newThreadsCount <= maxParallelism) {
+  /*      if (newThreadsCount != numberOfThreads && newThreadsCount > 0 && newThreadsCount <= maxParallelism) {
             numberOfThreads = newThreadsCount;
             setPoolSize();
-        }
+        }*/
     }
 
     // ---------------------------------------------- ctor and utils ------------------------------------------------ //
@@ -142,13 +139,11 @@ public abstract class Task implements Serializable {
             for (int i = 0; i < waitingList.size(); i++) {
                 pauseThreadTask();
                 TaskTarget targetToExecute = graph.get(waitingList.get(i));
-                // the order of the statements inside the if () is important - relaying on "&&" short-circuiting feature
-                // i.e. if the equals methode evaluates to false canIRun will not be called
                 if (targetToExecute.state.equals(TargetState.WAITING) && serialSetManger.canIRun(targetToExecute.name)) {
                     targetToExecute.state = TargetState.IN_PROCESS;
                     targetToExecute.enterProcess = System.currentTimeMillis();
                     resOfTargetTaskRun = new accumulatorForWritingToFile();
-                    Platform.runLater(() -> finishedTarget.accept(new ProgressDto(targetToExecute.name, TargetState.IN_PROCESS)));
+                    //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(targetToExecute.name, TargetState.IN_PROCESS)));
                     accumulatorForWritingToFile finalResOfTargetTaskRun = resOfTargetTaskRun;
                     sendToNewThreadAndPushToPool(print, fullPath, targetToExecute, finalResOfTargetTaskRun);
                 }
@@ -198,10 +193,10 @@ public abstract class Task implements Serializable {
             pauseThreadTask();
             updateNumberOfActiveThreads(true);
             runTaskOnTarget(targetToExecute, finalResOfTargetTaskRun, print);
-            Platform.runLater(() -> {
+       /*     Platform.runLater(() -> {
                 finishedTargetLog.accept(finalResOfTargetTaskRun);
                 finishedTarget.accept(new ProgressDto(getNamesToRunLater(targetToExecute, finalResOfTargetTaskRun), targetToExecute.state));
-            });
+            });*/
             writeTargetResultsToLogFile(finalResOfTargetTaskRun, fullPath);
             logData.add(finalResOfTargetTaskRun);
             targetSummary(finalResOfTargetTaskRun, print);
@@ -275,7 +270,7 @@ public abstract class Task implements Serializable {
     protected String createDirectoryToLogData(long graphRunStartTime) {
         Date d = new Date(graphRunStartTime);
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
-        File logFile = new File(path + "\\" + "simulation - " + sdf.format(d));
+        File logFile = new File(WORKING_DIR + "\\" + "simulation - " + sdf.format(d));
         if (!logFile.exists()) {
             try {
                 if (!logFile.mkdirs()) throw new IOException("Could not create directory");
@@ -344,7 +339,7 @@ public abstract class Task implements Serializable {
             if (graph.get(neighbour).dependsOn.isEmpty()) {
                 if (!graph.get(neighbour).state.equals(TargetState.SKIPPED) &&
                         !waitingList.contains(neighbour)) {
-                    Platform.runLater(() -> finishedTarget.accept(new ProgressDto(neighbour, TargetState.WAITING)));
+                    //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(neighbour, TargetState.WAITING)));
                     waitingList.add(neighbour);
                     graph.get(neighbour).state = TargetState.WAITING;
                 }
@@ -387,7 +382,7 @@ public abstract class Task implements Serializable {
             graph.get(targetName).requiredFor.forEach(reqName ->
                     graph.get(reqName).dependsOn.add(targetName));
             graph.get(targetName).state = TargetState.WAITING;
-            Platform.runLater(() -> finishedTarget.accept(new ProgressDto(targetName, TargetState.WAITING)));
+            //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(targetName, TargetState.WAITING)));
         });
 
         // RESETTING ALL SKIPPED TARGET TO THEIR ACTUAL STATE

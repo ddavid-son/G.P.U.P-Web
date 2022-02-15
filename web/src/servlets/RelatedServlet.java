@@ -11,7 +11,7 @@ import utils.SessionUtils;
 
 import java.io.IOException;
 
-@WebServlet(name = "RelatedServlet", urlPatterns = "/get-what-if")
+@WebServlet(name = "RelatedServlet", urlPatterns = "/get-related")
 public class RelatedServlet extends HttpServlet {
 
     @Override

@@ -4,14 +4,14 @@ import app.mainScreen.ControlPanelController;
 import app.sideMenu.SideMenuController;
 import argumentsDTO.CommonEnums.*;
 import argumentsDTO.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Slider;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -35,6 +35,9 @@ public class TaskFormController {
     public Button OutputFolderUploadBnt;
     public RadioButton whatIfDownOnRBComp;
     public GridPane compilationTabGridPane;
+    @FXML
+    private TextField compilationTaskNameTF;
+
     @FXML
     private IntField threadNumberForCompilationField;
     // ----------------------------------------------- Compilation Components ---------------------------------------- //
@@ -91,6 +94,9 @@ public class TaskFormController {
 
     @FXML
     private RadioButton whatIfUpOnRB;
+
+    @FXML
+    private TextField simulationTaskNameTF;
     // ----------------------------------------------- Simulation Components ---------------------------------------- //
 
     private File currentFileInTask;
@@ -170,8 +176,7 @@ public class TaskFormController {
         }
         ((Stage) newRunBtn.getScene().getWindow()).close();
 
-        //todo: add the paths i got from the user to the CompilationArgs Ctor
-        appController.runTask(new CompilationArgs(
+        CompilationArgs compilationArgs = new CompilationArgs(
                 !whatIfOffRB.isSelected(),
                 threadNumberForCompilationField.getValue(),
                 isIncremental,
@@ -180,7 +185,10 @@ public class TaskFormController {
                         RelationType.REQUIRED_FOR,
                 this.srcFolder.toString(),
                 this.dstFolder.toString()
-        ));
+        );
+
+        updateTaskData(compilationArgs);
+        appController.runTask(compilationArgs);
         if (sideMenuController.taskType == null || !isIncremental) {
             sideMenuController.taskType = TaskType.COMPILATION;
         }
@@ -232,7 +240,6 @@ public class TaskFormController {
     // --------------------------------------------- Simulation Methods ----------------------------------------------//
     @FXML
     private void OnNewRunBtnClicked(ActionEvent event) {
-        //todo: add check that all the inputs are valid
         if (!incrementalRunBtn.isDisable())
             appController.resetListOnTaskView(false);
         sideMenuController.setNewFileForTask();
@@ -241,7 +248,6 @@ public class TaskFormController {
 
     @FXML
     private void OnIncrementalRunBtnClicked(ActionEvent event) {
-        //todo: add check that all the inputs are valid
         appController.resetListOnTaskView(true);
         runSimulationTask(true);
     }
@@ -268,6 +274,7 @@ public class TaskFormController {
             return;
         }
         ((Stage) newRunBtn.getScene().getWindow()).close();
+
         SimulationArgs simulationArgs = new SimulationArgs(
                 ((double) successField.getValue()) / 100,
                 ((double) warningField.getValue()) / 100,
@@ -280,9 +287,21 @@ public class TaskFormController {
                         RelationType.DEPENDS_ON :
                         RelationType.REQUIRED_FOR
         );
+        updateTaskData(simulationArgs);
+
         appController.runTask(simulationArgs);
         if (sideMenuController.taskType == null || !simulationArgs.isIncremental())
             sideMenuController.taskType = TaskType.SIMULATION;
+    }
+
+    private void updateTaskData(TaskArgs taskArgs) {
+        taskArgs.setTaskName(
+                taskArgs.getTaskType().equals(TaskType.SIMULATION) ?
+                        simulationTaskNameTF.getText() :
+                        compilationTaskNameTF.getText()
+        );
+        taskArgs.setTaskOwner(appController.getUsername());
+        taskArgs.setOriginalGraph(appController.getEngineName());
     }
 
     private boolean assertSimulationUserInput() {
@@ -313,8 +332,8 @@ public class TaskFormController {
                         TaskType.SIMULATION == sideMenuController.taskType
 
         );
-        sourceFolderUploadBnt.setGraphic(appController.getIcon("/icons/UploadIcon.png"));
-        OutputFolderUploadBnt.setGraphic(appController.getIcon("/icons/UploadIcon.png"));
+        sourceFolderUploadBnt.setGraphic(appController.getIcon("/UploadIcon.png"));
+        OutputFolderUploadBnt.setGraphic(appController.getIcon("/UploadIcon.png"));
     }
 
     private void simulationTabSetUp(int maxThreadCount, boolean incrementalAvailable, boolean filesAreTheSame) {

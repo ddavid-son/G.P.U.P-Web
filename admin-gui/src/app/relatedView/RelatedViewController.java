@@ -23,6 +23,7 @@ import resources.Constants;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class RelatedViewController {
 
@@ -53,7 +54,7 @@ public class RelatedViewController {
                 RelationType.REQUIRED_FOR :
                 RelationType.DEPENDS_ON;
         relationIndicatorBtn.setText(relationType.toString().replace("_", " "));
-        fetchWhatIf(whatIfSelection.getTargetName(), relationType);
+        fetchWhatIf(whatIfSelection.getTargetName(), relationType, this::updateWhatIfView);
     }
 
     private void updateWhatIfView(WhatIfDTO whatIfRes) {
@@ -63,8 +64,8 @@ public class RelatedViewController {
                 whatIfSelection.getAllRelated());
     }
 
-    private void fetchWhatIf(String targetName, RelationType relationType) {
-        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-what-if")
+    public void fetchWhatIf(String targetName, RelationType relationType, Consumer<WhatIfDTO> consumer) {
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-related")
                 .newBuilder()
                 .addQueryParameter("engine-name", appController.getEngineName())
                 .addQueryParameter("target-name", targetName)
@@ -84,7 +85,7 @@ public class RelatedViewController {
                 if (response.code() != 200) {
                     appController.handleErrors(null, s, "Error fetching all Paths");
                 } else {
-                    Platform.runLater(() -> updateWhatIfView(
+                    Platform.runLater(() -> consumer.accept(
                             HttpClientUtil.GSON.fromJson(s, new TypeToken<WhatIfDTO>() {
                             }.getType())
                     ));
@@ -108,7 +109,7 @@ public class RelatedViewController {
         targetListView.setPlaceholder(new Text("No targets found"));
 
         targetListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) ->
-                fetchWhatIf(newValue, relationType));
+                fetchWhatIf(newValue, relationType, this::updateWhatIfView));
 
         filterNonImmediateCB.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue) {

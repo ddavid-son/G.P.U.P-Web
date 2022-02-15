@@ -8,6 +8,7 @@
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -15,7 +16,7 @@
 
 <ScrollPane fx:id="taskStage" fitToHeight="true" fitToWidth="true" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="app.taskForm.TaskFormController">
     <content>
-        <TabPane fx:id="tabs" accessibleText="DFGFGDFGD" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE">
+        <TabPane fx:id="tabs" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE">
             <tabs>
                 <Tab fx:id="simulationTab" closable="false" text="Simulation">
                     <content>
@@ -38,13 +39,13 @@
                             </rowConstraints>
                             <children>
                                 <Slider fx:id="successSlider" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.rowIndex="1" GridPane.valignment="TOP" />
-                                <Label text="succses:" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="TOP" />
-                                <Label text="succsses with warning" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="BOTTOM" />
+                                <Label text="Success:" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="TOP" />
+                                <Label text="Warning" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="BOTTOM" />
                                 <Slider fx:id="warningSlider" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.rowIndex="1" GridPane.valignment="BOTTOM" />
-                                <Label text="Sleep time:" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                <Label text="Sleep Time:" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                 <Slider fx:id="sleepTimeSlider" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.halignment="LEFT" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
                                 <Slider fx:id="threadSlider" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.halignment="LEFT" GridPane.rowIndex="3" GridPane.valignment="TOP" />
-                                <Label text="Thread count:" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="TOP" />
+                                <Label text="Thread Count:" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="TOP" />
                                 <Label text="Random sleep time:" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="4" GridPane.valignment="TOP">
                                     <GridPane.margin>
                                         <Insets right="5.0" />
@@ -73,6 +74,16 @@
                                         <Insets />
                                     </opaqueInsets>
                                 </HBox>
+                                <Label alignment="BOTTOM_LEFT" text="Task Name: " GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.valignment="CENTER">
+                                    <GridPane.margin>
+                                        <Insets top="15.0" />
+                                    </GridPane.margin>
+                                </Label>
+                                <TextField fx:id="simulationTaskNameTF" alignment="BOTTOM_LEFT" GridPane.columnIndex="2" GridPane.rowIndex="3" GridPane.valignment="CENTER">
+                                    <GridPane.margin>
+                                        <Insets top="15.0" />
+                                    </GridPane.margin>
+                                </TextField>
                             </children>
                         </GridPane>
                     </content>
@@ -105,25 +116,31 @@
                                 </Button>
                                 <Button fx:id="OutputFolderUploadBnt" mnemonicParsing="false" onAction="#onOutputFolderUploadBntClicked" GridPane.columnIndex="2" GridPane.halignment="LEFT" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
                                 <Label text="Output Folder:" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
-                                  <Slider fx:id="threadSliderComp" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.rowIndex="3" />
-                                  <Label text="Thread count:" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                  <Label text="What if selection:" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="TOP">
-                                      <padding>
-                                          <Insets right="10.0" />
-                                      </padding>
-                                  </Label>
-                                  <RadioButton fx:id="whatIfOffRBComp" mnemonicParsing="false" onAction="#onWhatIfOffRBCompClicked" text="Off" GridPane.columnIndex="2" GridPane.rowIndex="4" GridPane.valignment="TOP" />
-                                  <RadioButton fx:id="whatIfDownOnRBComp" mnemonicParsing="false" onAction="#onWhatIfDownOnRBCompClicked" text="On - Down" GridPane.columnIndex="2" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="BOTTOM" />
-                                  <RadioButton fx:id="whatIfUpOnRBComp" mnemonicParsing="false" onAction="#onWhatIfUpOnRBCompClicked" text="On - Up" GridPane.columnIndex="2" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="CENTER" />
-                                  <HBox alignment="BOTTOM_RIGHT" fillHeight="false" minWidth="200.0" spacing="10.0" GridPane.columnIndex="4" GridPane.halignment="RIGHT" GridPane.rowIndex="4" GridPane.valignment="BOTTOM">
-                                      <children>
-                                          <Button fx:id="incrementalRunBtnComp" mnemonicParsing="false" onAction="#onIncrementalRunBtnCompClicked" text="Incremental" />
-                                          <Button fx:id="newRunBtnComp" mnemonicParsing="false" onAction="#onNewRunBtnCompClicked" text="New" />
-                                      </children>
-                                      <opaqueInsets>
-                                          <Insets />
-                                      </opaqueInsets>
-                                  </HBox>
+                                <Slider fx:id="threadSliderComp" GridPane.columnIndex="2" GridPane.columnSpan="2" GridPane.rowIndex="3" />
+                                <Label text="Thread count:" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                <Label text="What if selection:" GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="TOP">
+                                    <padding>
+                                        <Insets right="10.0" />
+                                    </padding>
+                                </Label>
+                                <RadioButton fx:id="whatIfOffRBComp" mnemonicParsing="false" onAction="#onWhatIfOffRBCompClicked" text="Off" GridPane.columnIndex="2" GridPane.rowIndex="4" GridPane.valignment="TOP" />
+                                <RadioButton fx:id="whatIfDownOnRBComp" mnemonicParsing="false" onAction="#onWhatIfDownOnRBCompClicked" text="On - Down" GridPane.columnIndex="2" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="BOTTOM" />
+                                <RadioButton fx:id="whatIfUpOnRBComp" mnemonicParsing="false" onAction="#onWhatIfUpOnRBCompClicked" text="On - Up" GridPane.columnIndex="2" GridPane.halignment="LEFT" GridPane.rowIndex="4" GridPane.valignment="CENTER" />
+                                <HBox alignment="BOTTOM_RIGHT" fillHeight="false" minWidth="200.0" spacing="10.0" GridPane.columnIndex="4" GridPane.halignment="RIGHT" GridPane.rowIndex="4" GridPane.valignment="BOTTOM">
+                                    <children>
+                                        <Button fx:id="incrementalRunBtnComp" mnemonicParsing="false" onAction="#onIncrementalRunBtnCompClicked" text="Incremental" />
+                                        <Button fx:id="newRunBtnComp" mnemonicParsing="false" onAction="#onNewRunBtnCompClicked" text="New" />
+                                    </children>
+                                    <opaqueInsets>
+                                        <Insets />
+                                    </opaqueInsets>
+                                </HBox>
+                                <HBox alignment="CENTER" fillHeight="false" spacing="10.0" GridPane.columnIndex="3" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+                                    <children>
+                                        <Label text="Task Name:" />
+                                        <TextField fx:id="compilationTaskNameTF" />
+                                    </children>
+                                </HBox>
                             </children>
                         </GridPane>
                     </content>

@@ -99,7 +99,7 @@ public class SideMenuController {
             taskFormController.setTaskController(
                     5,
                     false,
-                    currentFileInTask.equals(appController.getActiveFile())
+                    true //currentFileInTask.equals(appController.getActiveFile())
             );
 
             Stage stage = new Stage();

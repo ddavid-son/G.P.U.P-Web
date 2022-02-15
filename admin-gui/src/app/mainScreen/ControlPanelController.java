@@ -69,6 +69,7 @@ public class ControlPanelController {
     private final String FIND_ALL_PATHS_FXML_FILE = "/resources/fxml/findAllPaths.fxml";
     private final String CIRCLE_DISPLAY_FXML_FILE = "/resources/fxml/circleDisplay.fxml";
     private ScrollPane dashboard;
+    private String userName;
 
 
     // ---------------------------------------------------- Utils --------------------------------------------------- //
@@ -80,6 +81,10 @@ public class ControlPanelController {
         // set new css to this scene
         graphTableViewComponent.getStylesheets().clear();
         graphTableViewComponent.getStylesheets().add(themeCSSPath);
+    }
+
+    public String getUsername() {
+        return userName;
     }
 
     @FXML
@@ -108,9 +113,10 @@ public class ControlPanelController {
         sideMenuComponentController.setAllComponentsToDisabled(false);
     }
 
-    public void setControlPanel(String engineName, ScrollPane dashboard) {
+    public void setControlPanel(String engineName, ScrollPane dashboard, String userName) {
         this.engineName = engineName;
         this.dashboard = dashboard;
+        this.userName = userName;
         fetchDTOsForAdmin();
     }
 
@@ -313,10 +319,9 @@ public class ControlPanelController {
 
 
     public void runTask(TaskArgs taskArgs) {
-
         List<String> targetNames = graphTableViewComponentController.getSelectedTargetNames();
         if (taskArgs.isWhatIf()) {
-            targetNames = getAllWhatIfResults(targetNames, taskArgs.getRelationType());
+            targetNames = fetchWhatIfResults(targetNames, taskArgs.getRelationType());
         }
         targetFromPreviousRun = targetNames; // here for the visibility of Incremental button
         taskArgs.getTargetsSelectedForGraph().addAll(targetNames);
@@ -324,11 +329,49 @@ public class ControlPanelController {
         taskViewController.delegateExecutionOfTaskToAnotherThread(taskArgs);
     }
 
-    private List<String> getAllWhatIfResults(List<String> targetNames, RelationType relationType) {
-        List<String> whatIfResult = new ArrayList<>();
-        //targetNames.forEach(targetName -> whatIfResult.addAll(execution.getWhatIf(targetName, relationType).getAllRelated()));
-        targetNames.addAll(whatIfResult);
-        return targetNames.stream().distinct().collect(Collectors.toList());
+    private List<String> fetchWhatIfResults(List<String> targetNames, RelationType relationType) {
+        String finalURl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-what-if")
+                .newBuilder()
+                .addQueryParameter("engine-name", engineName)
+                .addQueryParameter("relation-type", relationType.toString())
+                .build()
+                .toString();
+
+        RequestBody body = RequestBody.create(
+                HttpClientUtil.GSON.toJson(targetNames),
+                MediaType.parse("application/json")
+        );
+
+        Request request = new Request.Builder()
+                .url(finalURl)
+                .post(body)
+                .build();
+
+        try {
+            Response response = HttpClientUtil.HTTP_CLIENT.newCall(request).execute();
+            return getAllWhatIfResultsFromResponse(response);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    private List<String> getAllWhatIfResultsFromResponse(Response response) {
+        String s = "";
+        try {
+            if (response.isSuccessful()) {
+                s = response.body().string();
+                return HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                }.getType());
+            }
+            handleErrors(null,
+                    "http call ended unsuccessfully: error code " + response.code() + "\n message: " + s,
+                    "Error getting what if results");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new ArrayList<>();
     }
 
     public boolean currentSelectedTargetsAreTheSameAsPreviousRun() {

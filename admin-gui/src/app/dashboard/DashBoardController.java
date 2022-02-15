@@ -32,7 +32,7 @@ public class DashBoardController {
     private ListView<String> graphListView;
 
     @FXML
-    private ListView<?> pendingWorkListView;
+    private ListView<String> pendingWorkListView;
 
     @FXML
     private TableView<GraphInfoDTO> graphPeekTable;
@@ -90,9 +90,10 @@ public class DashBoardController {
 
     // ---------------------------------------------------- init ---------------------------------------------------- //
     public void setDashBoard(String username) {
+        loggedInAs.setText("Hello " + username + "!");
+
         initUserTable();
         scheduleUsersFetching();
-        this.loggedInAs.setText("Hello " + username + "!");
 
         scheduleGraphNameFetching();
         graphListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -100,7 +101,6 @@ public class DashBoardController {
                 fetchGraphPeekFromServer(newValue);
             }
         });
-
         graphListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 String s = graphListView.getSelectionModel().getSelectedItem();
@@ -109,6 +109,8 @@ public class DashBoardController {
                 }
             }
         });
+
+        scheduleTasksFetching();
     }
 
     private void initUserTable() {
@@ -146,6 +148,41 @@ public class DashBoardController {
     // ---------------------------------------------------- init ---------------------------------------------------- //
 
 
+    // ---------------------------------------------------- init ---------------------------------------------------- //
+    private void scheduleTasksFetching() {
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                fetchTasksFromServer();
+            }
+        }, 0, Constants.REFRESH_RATE);
+
+    }
+
+    private void fetchTasksFromServer() {
+        String finalUrl = Constants.FULL_SERVER_PATH + "/get-task-names";
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Failed to fetch tasks names");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();
+                if (response.isSuccessful()) {
+                    List<String> taskNames =
+                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType());
+                    if (taskNames.size() != pendingWorkListView.getItems().size())
+                        Platform.runLater(() -> pendingWorkListView.getItems().setAll(taskNames));
+                }
+            }
+        });
+    }
+    // ---------------------------------------------------- init ---------------------------------------------------- //
+
+
     // ------------------------------------------------- peek graph ------------------------------------------------- //
     private void fetchGraphPeekFromServer(String selectedGraphName) {
         String url = Constants.FULL_SERVER_PATH + "/graph-peek" + "?graph-name=" + selectedGraphName;
@@ -166,14 +203,14 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, Response response) throws IOException {
+                String responseString = response.body().string();
                 if (response.code() != 200) {
                     handleErrors(
                             null,
-                            "Failed to get graph peek data from server, Please try again later",
+                            responseString,
                             "Can't get graph peek data"
                     );
                 } else {
-                    String responseString = response.body().string();
                     GraphInfoDTO graphInfoDTO = HttpClientUtil.GSON.fromJson(responseString, GraphInfoDTO.class);
                     Platform.runLater(() -> initGraphPeekTable(graphInfoDTO));
                 }
@@ -205,12 +242,11 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();
                 if (response.isSuccessful()) {
                     List<String> graphNames =
-                            HttpClientUtil.GSON.fromJson(
-                                    response.body().string(),
-                                    new TypeToken<List<String>>() {
-                                    }.getType());
+                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType());
                     if (graphNames.size() != graphListView.getItems().size())
                         Platform.runLater(() -> graphListView.getItems().setAll(graphNames));
                 }
@@ -240,13 +276,13 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();
                 if (response.code() == 200) {
                     updateUsersList(
-                            HttpClientUtil.GSON.fromJson(
-                                    response.body().string(),
-                                    new TypeToken<List<UserDto>>() {
+                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<UserDto>>() {
                                     }.getType()
-                            ));
+                            )
+                    );
                 }
             }
         });
@@ -328,7 +364,7 @@ public class DashBoardController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/fxml/mainScreen.fxml"));
             Parent root = loader.load();
             ControlPanelController graphController = loader.getController();
-            graphController.setControlPanel(graphName, dashboardScrollPane);
+            graphController.setControlPanel(graphName, dashboardScrollPane, loggedInAs.getText());
             ((Stage) dashboardScrollPane.getScene().getWindow()).setScene(new Scene(root));
         } catch (IOException e) {
             e.printStackTrace();

@@ -17,11 +17,11 @@ public class SimulationTask extends Task implements Serializable {
     private double successfulWithWarningRate;
     Random random;
 
-    public SimulationTask(TaskArgs taskArgs, GraphManager graphManager, String pathToLogFile,
+    public SimulationTask(TaskArgs taskArgs, GraphManager graphManager,
                           SerialSetManger serialSetManager, Consumer<accumulatorForWritingToFile> finishedTargetLog,
-                          Consumer<ProgressDto> finishedTarget, int maxParallelism) {
-        super(false, serialSetManager, taskArgs.getNumOfThreads(), graphManager, pathToLogFile
-                , finishedTargetLog, finishedTarget, maxParallelism);
+                          Consumer<ProgressDto> finishedTarget) {
+        super(false, serialSetManager, taskArgs.getNumOfThreads(), graphManager
+                , finishedTargetLog, finishedTarget);
         SimulationArgs simulationArgs = (SimulationArgs) taskArgs;
         this.random = new Random();
         this.isRandom = simulationArgs.isRandom();

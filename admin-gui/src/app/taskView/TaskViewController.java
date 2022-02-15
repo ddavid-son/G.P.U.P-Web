@@ -2,8 +2,10 @@ package app.taskView;
 
 import app.mainScreen.ControlPanelController;
 import app.taskView.summaryWindow.SummaryController;
+import app.util.http.HttpClientUtil;
 import argumentsDTO.CommonEnums.*;
 import argumentsDTO.*;
+import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -23,6 +25,9 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
+import resources.Constants;
 
 import java.io.IOException;
 import java.net.URL;
@@ -127,11 +132,11 @@ public class TaskViewController {
     void onPlayPauseBtnClicked(ActionEvent event) {
         if (!paused) {
             appController.pauseExecution();
-            playPauseBtn.setGraphic(appController.getIcon("/icons/playBtnIcon.png", 35));
+            playPauseBtn.setGraphic(appController.getIcon("/playBtnIcon.png", 35));
             paused = true;
         } else {
             appController.resumeExecution();
-            playPauseBtn.setGraphic(appController.getIcon("/icons/pauseBtnIcon.png", 35));
+            playPauseBtn.setGraphic(appController.getIcon("/pauseBtnIcon.png", 35));
             paused = false;
         }
     }
@@ -163,7 +168,7 @@ public class TaskViewController {
                         1)
         );
 
-        playPauseBtn.setGraphic(appController.getIcon("/icons/pauseBtnIcon.png", 35));
+        playPauseBtn.setGraphic(appController.getIcon("/pauseBtnIcon.png", 35));
         progressBar.setProgress(0F);
     }
 
@@ -462,7 +467,39 @@ public class TaskViewController {
     }
 
     public void delegateExecutionOfTaskToAnotherThread(TaskArgs taskArgs) {
-        Thread thread = new Thread(() -> {
+        playPauseBtn.setDisable(false);
+        String taskType = taskArgs.getTaskType().toString();
+
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/create-task")
+                .newBuilder()
+                .addQueryParameter("task-type", taskType)
+                .build()
+                .toString();
+
+        RequestBody requestBody = getRequestBody(taskArgs);
+
+        Request request = new Request.Builder()
+                .url(finalUrl)
+                .post(requestBody)
+                .build();
+
+        HttpClientUtil.runAsync(request, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                appController.handleErrors(e, "", "Error! could not create the task");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();
+                if (!response.isSuccessful()) {
+                    System.out.println(responseBody);
+                    appController.handleErrors(null, responseBody, "Error! could not create the task");
+                }
+            }
+        });
+
+        /*    Thread thread = new Thread(() -> {
             try {
                 playPauseBtn.setDisable(false);
                 long start = System.currentTimeMillis();
@@ -481,7 +518,26 @@ public class TaskViewController {
             // TODO: maybe down here will handle the summary data fetching with runLater to update the UI
         });
         thread.setName("Task thread");
-        thread.start();
+        thread.start();*/
+    }
+
+    @NotNull
+    private RequestBody getRequestBody(TaskArgs taskArgs) {
+        RequestBody rb;
+        if (taskArgs.getTaskType() == TaskType.COMPILATION) {
+            CompilationArgs ca = (CompilationArgs) taskArgs;
+            rb = RequestBody.create(
+                    HttpClientUtil.GSON.toJson(ca, new TypeToken<CompilationArgs>() {
+                    }.getType()),
+                    MediaType.parse("application/json"));
+        } else {
+            SimulationArgs ca = (SimulationArgs) taskArgs;
+            rb = RequestBody.create(
+                    HttpClientUtil.GSON.toJson(ca, new TypeToken<SimulationArgs>() {
+                    }.getType()),
+                    MediaType.parse("application/json"));
+        }
+        return rb;
     }
 
     private void showSummaryWindow(long time) {

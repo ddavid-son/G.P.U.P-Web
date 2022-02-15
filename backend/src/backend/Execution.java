@@ -16,16 +16,16 @@ import javax.xml.bind.Unmarshaller;
 import java.io.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 
 public class Execution implements Engine, Serializable {
     private Task task;
     private String ownerName;
+    private final String WORKING_DIR = "c:\\gpup-working-dir";
     private String graphName;
-    private int maxParallelism;
     private int simulationPrice = -1;
     private int compilationPrice = -1;
-    private String workingDirectory;
     GraphManager costumeGraphManager;
     private GraphManager graphManager;
     private Consumer<ProgressDto> finishedTarget;
@@ -33,7 +33,7 @@ public class Execution implements Engine, Serializable {
     private final static String JAXB_XML_GENERATED_CLASSES_PATH = "backend.xmlhandler";
 
     //----------------------------------------- read/write state from/to file ----------------------------------------//
-    @Override
+   /* @Override
     public void readObjectFromFile(String filePath) {
         checkIfFileExists(filePath + ".dat");
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(filePath + ".dat"))) {
@@ -90,7 +90,7 @@ public class Execution implements Engine, Serializable {
             throw new IllegalArgumentException("the path does not exist and could not be created");
         }
         return path;
-    }
+    }*/
     //----------------------------------------- read/write state from/to file ----------------------------------------//
 
 
@@ -157,44 +157,38 @@ public class Execution implements Engine, Serializable {
                         graphManager.getRequiredForOfByName(targetName));
     }
 
-
+    @Override
+    public List<String> getWhatIf(List<String> targetNames, RelationType relationType) {
+        List<String> whatIfResult = new ArrayList<>();
+        targetNames.forEach(targetName -> whatIfResult.addAll(getWhatIf(targetName, relationType).getAllRelated()));
+        targetNames.addAll(whatIfResult);
+        return targetNames.stream().distinct().collect(Collectors.toList());
+    }
     //----------------------------------------------- info about info ------------------------------------------------//
 
 
     //--------------------------------------------------- run task --------------------------------------------------//
-    //build graphManager from list of targets
     private void buildCostumeGraphManager(List<String> targets) {
         costumeGraphManager = new GraphManager(targets, graphManager);
     }
 
     @Override
-    public void runTaskOnGraph(TaskArgs taskArgs, Consumer<accumulatorForWritingToFile> finishedTargetLog,
-                               Consumer<ProgressDto> finishedTarget) {
+    public TaskManager buildTask(TaskArgs taskArgs, Consumer<accumulatorForWritingToFile> finishedTargetLog,
+                                 Consumer<ProgressDto> finishedTarget) {
         this.finishedTargetLog = finishedTargetLog;
         this.finishedTarget = finishedTarget;
-        checkIfGraphIsLoaded();
-        boolean createNewTask = true;
 
-        if (!taskArgs.isIncremental())
-            buildCostumeGraphManager(taskArgs.getTargetsSelectedForGraph());
+        buildCostumeGraphManager(taskArgs.getTargetsSelectedForGraph());
+        createTask(taskArgs);
 
-        if (task == null && taskArgs.isIncremental()) {
-            System.out.println("no previous run detected, task will start from scratch. ");
-        } else if (task != null && task.getAllGraphHasBeenProcessed() && taskArgs.isIncremental()) {
-            System.out.println("all graph has been processed, task will start from scratch. ");
-        } else if (!taskArgs.isIncremental()) {
-            //do nothing
-        } else {
-            task.getReadyForIncrementalRun(taskArgs);
-            createNewTask = false;
-        }
+        TaskManager taskManager = new TaskManager(task);
+        taskManager.setPrices(simulationPrice, compilationPrice);
+        taskManager.setManagerData(taskArgs.getOriginalGraph(), taskArgs.getTaskName(), taskArgs.getTaskOwner());
 
-        if (createNewTask) {
-            createTask(taskArgs);
-        }
 
+        return taskManager;
         //todo: need to remove this sout after testing
-        task.run(System.out::println);
+        //task.run(System.out::println);
     }
 
     @Override
@@ -212,14 +206,12 @@ public class Execution implements Engine, Serializable {
     private void createTask(TaskArgs taskArgs) {
         switch (taskArgs.getTaskType()) {
             case SIMULATION:
-                task = new SimulationTask(taskArgs, costumeGraphManager, workingDirectory,
-                        costumeGraphManager.getSerialSetManager(), finishedTargetLog, finishedTarget,
-                        maxParallelism);
+                task = new SimulationTask(taskArgs, costumeGraphManager,
+                        costumeGraphManager.getSerialSetManager(), finishedTargetLog, finishedTarget);
                 break;
             case COMPILATION:
-                task = new CompilationTask(taskArgs, costumeGraphManager, workingDirectory,
-                        costumeGraphManager.getSerialSetManager(), finishedTargetLog, finishedTarget,
-                        maxParallelism);
+                task = new CompilationTask(taskArgs, costumeGraphManager,
+                        costumeGraphManager.getSerialSetManager(), finishedTargetLog, finishedTarget);
                 break;
         }
     }
@@ -314,8 +306,8 @@ public class Execution implements Engine, Serializable {
     public void xmlFileLoadingHandler(InputStream inputStream) {
         try {
             GPUPDescriptor gpupDescriptor = deserializeFrom(inputStream);
-            maxParallelism = 5; //TODO: add max parallelism
-            workingDirectory = "c:\\gpup-working-dir";
+            //maxParallelism = 5; //TODO: add max parallelism
+            //workingDirectory = "c:\\gpup-working-dir";
             handleError(checkIfDataIsValid(gpupDescriptor));
 
             getTaskPricing(gpupDescriptor);
@@ -500,29 +492,29 @@ public class Execution implements Engine, Serializable {
         return false;
     }
 
-    @Override
+    /*@Override
     public int getMaxThreadCount() {
-        return this.maxParallelism;
-    }
+        //return this.maxParallelism;
+    }*/
 
     @Override
-    public List<String> getAllTargetNames() {
+    public final List<String> getAllTargetNames() {
 
         return graphManager.getAllNamesOfTargets();
     }
 
     @Override
-    public List<String> getSerialSetList() {
+    public final List<String> getSerialSetList() {
         return new ArrayList<>(graphManager.getSerialSetManager().getSerialSetMap().keySet());
     }
 
     @Override
-    public List<String> getSerialSetTarget(String serialSetName) {
+    public final List<String> getSerialSetTarget(String serialSetName) {
         return graphManager.getSerialSetManager().getSerialSetMap().get(serialSetName).getTargetInSerialSet();
     }
 
     @Override
-    public List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState) {
+    public final List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState) {
         List<String> info = new ArrayList<>();
         info.add(targetName);//0
         info.add(costumeGraphManager.getTypeOf(targetName).toString());//1
