@@ -1,10 +1,7 @@
 package backend;
 
 import argumentsDTO.CommonEnums.RelationType;
-import dataTransferObjects.GraphInfoDTO;
-import dataTransferObjects.InfoAboutTargetDTO;
-import dataTransferObjects.UserDto;
-import dataTransferObjects.WhatIfDTO;
+import dataTransferObjects.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,6 +15,7 @@ public class GPUPManager {
     private Map<String, User> users = new HashMap<>(); // jsessionid -> user name // now with username cookie this is no longer necessary
     private Map<String, TaskManager> tasks = new HashMap<>(); // taskName TO taskManager
 
+    // ctor and utils refreshers
     public GPUPManager() {
 
     }
@@ -45,9 +43,9 @@ public class GPUPManager {
         return null;
     }
 
-    //
-
     public boolean addTask(TaskManager taskManager) {
+        //
+
         if (!tasks.containsKey(taskManager.getTaskName())) {
             tasks.put(taskManager.getTaskName(), taskManager);
             return true;
@@ -56,9 +54,24 @@ public class GPUPManager {
         return false;
     }
 
+    public List<String> getTasks() {
+        return new ArrayList<>(tasks.keySet());
+    }
 
-    //
+    // worker dashboard
+    public TaskInfoDTO getTaskInfo(String taskName) {
+        if (tasks.containsKey(taskName)) {
+            return tasks.get(taskName).getTaskDto();
+        }
+        return null;
+    }
 
+    public boolean taskExists(String taskName) {
+        return tasks.containsKey(taskName);
+    }
+
+
+    // users dashboards
     public List<UserDto> getUsers() {
         List<UserDto> userDto = new ArrayList<>();
         users.values().forEach(user -> {
@@ -75,8 +88,8 @@ public class GPUPManager {
         users.put(jsessionid, new User(userName, role));
     }
 
-    //
 
+    // admin dashboard
     public List<String> getLoadedGraphs() {
         return GPUPEngines.values().stream().map(Engine::getGraphName).collect(Collectors.toList());
     }
@@ -89,8 +102,8 @@ public class GPUPManager {
         return GPUPEngines.get(graphName).getInfoAboutAllTargets();
     }
 
-    //
 
+    // ex2 addons
     public List<String> getCircle(String engineName, String targetName) {
         return GPUPEngines.get(engineName).findIfTargetIsInACircle(targetName);
     }
@@ -98,8 +111,6 @@ public class GPUPManager {
     public List<String> getAllTargets(String engineName) {
         return GPUPEngines.get(engineName).getAllTargetNames();
     }
-
-    //
 
     public List<String> getAllPaths(String engineName, String src, String dst) {
         return GPUPEngines.get(engineName)
@@ -115,7 +126,4 @@ public class GPUPManager {
         );
     }
 
-    public List<String> getTasks() {
-        return new ArrayList<>(tasks.keySet());
-    }
 }

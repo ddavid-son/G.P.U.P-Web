@@ -87,11 +87,12 @@ public class DashBoardController {
 
     private final Timer timer = new Timer();
     private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
+    private String userName;
 
     // ---------------------------------------------------- init ---------------------------------------------------- //
     public void setDashBoard(String username) {
         loggedInAs.setText("Hello " + username + "!");
-
+        this.userName = username;
         initUserTable();
         scheduleUsersFetching();
 
@@ -364,7 +365,7 @@ public class DashBoardController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/fxml/mainScreen.fxml"));
             Parent root = loader.load();
             ControlPanelController graphController = loader.getController();
-            graphController.setControlPanel(graphName, dashboardScrollPane, loggedInAs.getText());
+            graphController.setControlPanel(graphName, dashboardScrollPane, userName);
             ((Stage) dashboardScrollPane.getScene().getWindow()).setScene(new Scene(root));
         } catch (IOException e) {
             e.printStackTrace();

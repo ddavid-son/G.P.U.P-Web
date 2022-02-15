@@ -23,6 +23,7 @@ import resources.Constants;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Locale;
 
 public class WorkerLoginController {
 
@@ -102,13 +103,14 @@ public class WorkerLoginController {
 
     private void switchToDashBoard() {
         try {
+            String username = userNameTF.getText().replaceAll("[^a-zA-Z0-9]", "").trim();
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource(Constants.DASHBOARD_FXML);
             fxmlLoader.setLocation(url);
             Parent root = fxmlLoader.load(url.openStream());
             Scene scene = new Scene(root);
             WorkerDashboardController controller = fxmlLoader.getController();
-            controller.setDashBoard(userNameTF.getText().replaceAll("[^a-zA-Z0-9]", ""));
+            controller.setDashBoard(username, primaryStage);
             primaryStage.setScene(scene);
         } catch (IOException e) {
             e.printStackTrace();

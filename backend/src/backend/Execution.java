@@ -185,7 +185,6 @@ public class Execution implements Engine, Serializable {
         taskManager.setPrices(simulationPrice, compilationPrice);
         taskManager.setManagerData(taskArgs.getOriginalGraph(), taskArgs.getTaskName(), taskArgs.getTaskOwner());
 
-
         return taskManager;
         //todo: need to remove this sout after testing
         //task.run(System.out::println);

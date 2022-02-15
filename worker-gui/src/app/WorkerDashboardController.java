@@ -5,20 +5,18 @@ import com.google.gson.reflect.TypeToken;
 import dataTransferObjects.TaskInfoDTO;
 import dataTransferObjects.UserDto;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
+import javafx.scene.control.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.Response;
+import javafx.stage.Stage;
+import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
@@ -28,8 +26,11 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static app.Utils.FXUtil.handleErrors;
+
 public class WorkerDashboardController {
 
+    public TableColumn<TaskInfoDTO, Boolean> taskEnrolledCol;
     @FXML
     private ScrollPane workerDashboardScrollPane;
 
@@ -58,13 +59,7 @@ public class WorkerDashboardController {
     private TableColumn<TaskInfoDTO, Integer> totalCol;
 
     @FXML
-    private TableColumn<TaskInfoDTO, ?> pricingCol;
-
-    @FXML
-    private TableColumn<TaskInfoDTO, Integer> simulationPriceCol;
-
-    @FXML
-    private TableColumn<TaskInfoDTO, Integer> compilationPriceCol;
+    private TableColumn<TaskInfoDTO, Integer> pricingCol;
 
     @FXML
     private TableView<UserDto> usersTable; // UserHistoryDto
@@ -76,16 +71,10 @@ public class WorkerDashboardController {
     private TableColumn<UserDto, String> userRoleCol;
 
     @FXML
-    private Button loadGraphBtn;
-
-    @FXML
     private Label loggedInAs;
 
     @FXML
-    private TableView<TaskInfoDTO> taskHeaderTable;
-
-    @FXML
-    private TableColumn<TaskInfoDTO, String> taskNameCol;
+    private ListView<String> taskHeaderTable;
 
     @FXML
     private TableColumn<TaskInfoDTO, String> taskOwnerCol;
@@ -97,6 +86,7 @@ public class WorkerDashboardController {
     private TableColumn<TaskInfoDTO, Rectangle> TaskEnrolledCol;
     //private TableColumn<TaskInfoDTO, String> TaskEnrolledCol;
 
+    private Stage primaryStage;
     private final Timer timer = new Timer();
     private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
 
@@ -105,26 +95,49 @@ public class WorkerDashboardController {
 
     }
 
-    public void setDashBoard(String username) {
+    // init
+    public void setDashBoard(String username, Stage primaryStage) {
         initUserTable();
         scheduleUsersFetching();
-        this.loggedInAs.setText("Hello " + username + "!");
+        loggedInAs.setText("Hello " + username + "!");
+        this.primaryStage = primaryStage;
 
-        /*scheduleGraphNameFetching();
-        graphListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null && !newValue.isEmpty()) {
+        scheduleTasksFetching();
+        taskHeaderTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && !newValue.isEmpty() && !newValue.equals(oldValue)) {
                 fetchGraphPeekFromServer(newValue);
             }
         });
+    }
 
-        graphListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                String s = graphListView.getSelectionModel().getSelectedItem();
-                if (s != null && !s.isEmpty()) {
-                    goToGraph(s);
+    private void fetchGraphPeekFromServer(String taskName) {
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-task-peek")
+                .newBuilder()
+                .addQueryParameter("task-name", taskName)
+                .build()
+                .toString();
+
+        HttpUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, " ", "Error, couldn't fetch task data from server");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();
+                if (response.isSuccessful()) {
+                    TaskInfoDTO taskInfoDTOList = HttpUtil.GSON.fromJson(responseBody, new TypeToken<TaskInfoDTO>() {
+                    }.getType());
+                    Platform.runLater(() -> updateTaskPeekTable(taskInfoDTOList));
+                } else {
+                    handleErrors(null,
+                            responseBody,
+                            "Error, couldn't fetch task data from server"
+                    );
                 }
             }
-        });*/
+        });
     }
 
     private void initUserTable() {
@@ -135,30 +148,83 @@ public class WorkerDashboardController {
         usersTable.setItems(userHistoryObsList);
     }
 
-    private void initTaskPeekTable(TaskInfoDTO taskInfoDTO) {
+
+    private void updateTaskPeekTable(TaskInfoDTO taskInfoDTO) {
         ObservableList<TaskInfoDTO> taskInfoObs = FXCollections.observableArrayList(taskInfoDTO);
 
         taskStatusCol.setCellValueFactory(cellData ->
-                new SimpleStringProperty(cellData.getValue().getOwnerName()));
+                new SimpleStringProperty(cellData.getValue().getTaskStatus().toString())
+        );
         taskListedCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getEnlistedWorkers()).asObject());
+                new SimpleIntegerProperty(cellData.getValue().getNumberOfListedWorker()).asObject()
+        );
         independentCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getTotalNumberOfIndependents()).asObject());
-        rootCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getTotalNumberOfRoots()).asObject());
+                new SimpleIntegerProperty(cellData.getValue().getIndependentsCount()).asObject()
+        );
         leafCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getTotalNumberOfLeaves()).asObject());
+                new SimpleIntegerProperty(cellData.getValue().getLeafsCount()).asObject()
+        );
         middleCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getTotalNumberOfMiddles()).asObject());
+                new SimpleIntegerProperty(cellData.getValue().getMiddlesCount()).asObject()
+        );
+        rootCol.setCellValueFactory(cellData ->
+                new SimpleIntegerProperty(cellData.getValue().getRootsCount()).asObject()
+        );
         totalCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getTotalNumberOfTargets()).asObject());
-        simulationPriceCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getSimulationPrice()).asObject());
-        compilationPriceCol.setCellValueFactory(cellData ->
-                new SimpleIntegerProperty(cellData.getValue().getCompilationPrice()).asObject());
+                new SimpleIntegerProperty(cellData.getValue().getTotalCount()).asObject()
+        );
+        pricingCol.setCellValueFactory(cellData ->
+                new SimpleIntegerProperty(cellData.getValue().getPricePerTarget()).asObject()
+        );
+        taskTypeCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getTaskType().toString())
+        );
+        taskOwnerCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getTaskOwner())
+        );
+        taskEnrolledCol.setCellValueFactory(cellData ->
+                new SimpleBooleanProperty(cellData.getValue().isEnrolled())
+        );
 
-        this.taskPeekTable.setItems(taskInfoObs);
+        taskPeekTable.setItems(taskInfoObs);
     }
+
+    // ------------------------------------------------- task update ------------------------------------------------//
+
+    private void scheduleTasksFetching() {
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                fetchTasksFromServer();
+            }
+        }, 0, Constants.REFRESH_RATE);
+
+    }
+
+    private void fetchTasksFromServer() {
+        String finalUrl = Constants.FULL_SERVER_PATH + "/get-task-names";
+        HttpUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Failed to fetch tasks names");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();
+                if (response.isSuccessful()) {
+                    List<String> taskNames =
+                            HttpUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType());
+                    if (taskNames.size() != taskHeaderTable.getItems().size())
+                        Platform.runLater(() -> taskHeaderTable.getItems().setAll(taskNames));
+                }
+            }
+        });
+    }
+
+    // ------------------------------------------------- task update ------------------------------------------------//
+
 
     // ------------------------------------------------- users update ------------------------------------------------//
     private void scheduleUsersFetching() {
@@ -175,18 +241,20 @@ public class WorkerDashboardController {
         HttpUtil.runAsync(finalUrl, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                System.out.println("Error: " + e);
+                handleErrors(e, "", "Error updating user list");
             }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();
                 if (response.code() == 200) {
                     updateUsersList(
                             HttpUtil.GSON.fromJson(
-                                    response.body().string(),
-                                    new TypeToken<java.util.List<UserDto>>() {
+                                    s, new TypeToken<java.util.List<UserDto>>() {
                                     }.getType()
                             ));
+                } else {
+                    handleErrors(null, s, "Error updating user list");
                 }
             }
         });

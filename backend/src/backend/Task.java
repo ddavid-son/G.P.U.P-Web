@@ -6,15 +6,14 @@ import argumentsDTO.TaskArgs;
 import argumentsDTO.TimeUtil;
 import argumentsDTO.accumulatorForWritingToFile;
 import backend.serialSets.SerialSetManger;
+import dataTransferObjects.GraphInfoDTO;
 import javafx.application.Platform;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
