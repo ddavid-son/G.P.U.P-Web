@@ -166,7 +166,8 @@ public class TaskFormController {
     }
 
     private void runCompilationTask(boolean isIncremental) {
-        if (!(srcFolder != null && dstFolder != null && srcFolder.exists() && dstFolder.exists())) {
+        if (!(!compilationTaskNameTF.getText().isEmpty() && srcFolder != null &&
+                dstFolder != null && srcFolder.exists() && dstFolder.exists())) {
             appController.handleErrors(
                     null,
                     "Source and destination folders must be set before running a compilation task.",
@@ -268,8 +269,8 @@ public class TaskFormController {
         if (assertSimulationUserInput()) {
             appController.handleErrors(
                     null,
-                    "please fill all the fields - dont leave field empty",
-                    "error in arguments that was inserted"
+                    "Please fill all the fields - dont leave any field empty",
+                    "Error in arguments that was inserted"
             );
             return;
         }
@@ -308,7 +309,8 @@ public class TaskFormController {
         return !(successField.getValue() > 0 &&
                 warningField.getValue() > 0 &&
                 sleepTimeField.getValue() > 0 &&
-                threadCountField.getValue() > 0);
+                threadCountField.getValue() > 0 &&
+                !simulationTaskNameTF.getText().isEmpty());
     }
     // --------------------------------------------- Simulation Methods ----------------------------------------------//
 

@@ -52,7 +52,7 @@ public class CreateTaskServlet extends HttpServlet {
             }
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().write("Arguments provided aren't valid " + taskArgs);
+            response.getWriter().write("Some of the arguments provided aren't valid: " + taskArgs);
         }
     }
 

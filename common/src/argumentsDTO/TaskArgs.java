@@ -32,17 +32,6 @@ public abstract class TaskArgs {
         this.isIncremental = isIncremental;
     }
 
- /*   public TaskArgs(TaskArgsBuilder taskArgsBuilder) {
-        this.isWhatIf = taskArgsBuilder.isWhatIf;
-        this.numOfThreads = taskArgsBuilder.numOfThreads;
-        this.taskType = taskArgsBuilder.taskType;
-        this.isIncremental = taskArgsBuilder.isIncremental;
-        this.relationType = taskArgsBuilder.relationType;
-        this.taskName = taskArgsBuilder.taskName;
-        this.taskOwner = taskArgsBuilder.taskOwner;
-        this.originalGraph = taskArgsBuilder.originalGraph;
-    }*/
-
     public RelationType getRelationType() {
         return relationType;
     }
@@ -104,74 +93,16 @@ public abstract class TaskArgs {
 
     @Override
     public String toString() {
-        return "TaskArgs [isWhatIf=" + isWhatIf + ", numOfThreads=" + numOfThreads + ", taskType=" + taskType
-                + ", isIncremental=" + isIncremental + ", relationType=" + relationType + ", targetsSelectedForGraph="
-                + targetsSelectedForGraph + ", taskName=" + taskName + ", taskOwner=" + taskOwner + ", originalGraph="
-                + originalGraph + "]";
+        return "taskArgs: \n" +
+                "taskName=" + taskName + "\n" +
+                "taskOwner=" + taskOwner + "\n" +
+                "originalGraph=" + originalGraph + "\n" +
+                "taskType=" + taskType + "\n" +
+                "numOfThreads=" + numOfThreads + "\n" +
+                "isWhatIf=" + isWhatIf + "\n" +
+                "isIncremental=" + isIncremental + "\n" +
+                "relationType=" + relationType + "\n" +
+                "targetsSelectedForGraph=" + targetsSelectedForGraph;
     }
-
-   /* public static class TaskArgsBuilder {
-
-        private boolean isWhatIf;
-        private int numOfThreads;
-        private TaskType taskType;
-        private boolean isIncremental;
-        private RelationType relationType;
-        private List<String> targetsSelectedForGraph = new ArrayList<>();
-        private String taskName;
-        private String taskOwner;
-        private String originalGraph;
-
-        public TaskArgsBuilder setTaskName(String taskName) {
-            this.taskName = taskName;
-            return this;
-        }
-
-        public TaskArgsBuilder setTaskOwner(String taskOwner) {
-            this.taskOwner = taskOwner;
-            return this;
-        }
-
-        public TaskArgsBuilder setOriginalGraph(String originalGraph) {
-            this.originalGraph = originalGraph;
-            return this;
-        }
-
-        public TaskArgsBuilder setIsWhatIf(boolean isWhatIf) {
-            this.isWhatIf = isWhatIf;
-            return this;
-        }
-
-        public TaskArgsBuilder setNumOfThreads(int numOfThreads) {
-            this.numOfThreads = numOfThreads;
-            return this;
-        }
-
-        public TaskArgsBuilder setTaskType(TaskType taskType) {
-            this.taskType = taskType;
-            return this;
-        }
-
-        public TaskArgsBuilder setIsIncremental(boolean isIncremental) {
-            this.isIncremental = isIncremental;
-            return this;
-        }
-
-        public TaskArgsBuilder setRelationType(RelationType relationType) {
-            this.relationType = relationType;
-            return this;
-        }
-
-        public TaskArgsBuilder setTargetsSelectedForGraph(List<String> targetsSelectedForGraph) {
-            this.targetsSelectedForGraph = targetsSelectedForGraph;
-            return this;
-        }
-
-        public TaskArgs build() {
-            TaskArgs taskArgs = new TaskArgs(this);
-            //validate here
-            return taskArgs;
-        }
-    }*/
 
 }
