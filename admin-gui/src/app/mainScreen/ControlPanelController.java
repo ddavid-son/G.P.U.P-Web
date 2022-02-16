@@ -1,6 +1,7 @@
 package app.mainScreen;
 
 import app.circleDisplay.CircleDisplayController;
+import app.dashboard.DashBoardController;
 import app.findAllPaths.FindAllPathsController;
 import app.graphTableView.GraphTableViewController;
 /*import app.circleDisplay.CircleDisplayController;
@@ -42,7 +43,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+
+import static app.util.FXUtils.handleErrors;
 
 public class ControlPanelController {
 
@@ -70,6 +72,7 @@ public class ControlPanelController {
     private final String CIRCLE_DISPLAY_FXML_FILE = "/resources/fxml/circleDisplay.fxml";
     private ScrollPane dashboard;
     private String userName;
+    private DashBoardController dashBoardController;
 
 
     // ---------------------------------------------------- Utils --------------------------------------------------- //
@@ -183,20 +186,6 @@ public class ControlPanelController {
 
     public File getActiveFile() {
         return activeFile;
-    }
-
-    public void handleErrors(Exception e, String bodyMessage, String headerMessage) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error occurred");
-            alert.setHeaderText(headerMessage);
-            if (e != null) {
-                alert.setContentText(e.getMessage());
-            } else {
-                alert.setContentText(bodyMessage);
-            }
-            alert.showAndWait();
-        });
     }
 
     public void findAllPaths() {
@@ -325,9 +314,64 @@ public class ControlPanelController {
         }
         targetFromPreviousRun = targetNames; // here for the visibility of Incremental button
         taskArgs.getTargetsSelectedForGraph().addAll(targetNames);
-        goToTaskView(taskArgs);
-        taskViewController.delegateExecutionOfTaskToAnotherThread(taskArgs);
+        //goToTaskView(taskArgs);
+        delegateExecutionOfTaskToAnotherThread(taskArgs);
     }
+
+    public void delegateExecutionOfTaskToAnotherThread(TaskArgs taskArgs) {
+        String taskType = taskArgs.getTaskType().toString();
+
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/create-task")
+                .newBuilder()
+                .addQueryParameter("task-type", taskType)
+                .build()
+                .toString();
+
+        RequestBody requestBody = getRequestBody(taskArgs);
+
+        Request request = new Request.Builder()
+                .url(finalUrl)
+                .post(requestBody)
+                .build();
+
+        HttpClientUtil.runAsync(request, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Error! could not create the task");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();
+                if (!response.isSuccessful()) {
+                    System.out.println(responseBody);
+                    handleErrors(null, responseBody, "Error! could not create the task");
+                } else {
+                    // update label with success info
+                }
+            }
+        });
+    }
+
+    @NotNull
+    private RequestBody getRequestBody(TaskArgs taskArgs) {
+        RequestBody rb;
+        if (taskArgs.getTaskType() == TaskType.COMPILATION) {
+            CompilationArgs ca = (CompilationArgs) taskArgs;
+            rb = RequestBody.create(
+                    HttpClientUtil.GSON.toJson(ca, new TypeToken<CompilationArgs>() {
+                    }.getType()),
+                    MediaType.parse("application/json"));
+        } else {
+            SimulationArgs ca = (SimulationArgs) taskArgs;
+            rb = RequestBody.create(
+                    HttpClientUtil.GSON.toJson(ca, new TypeToken<SimulationArgs>() {
+                    }.getType()),
+                    MediaType.parse("application/json"));
+        }
+        return rb;
+    }
+
 
     private List<String> fetchWhatIfResults(List<String> targetNames, RelationType relationType) {
         String finalURl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-what-if")
@@ -419,40 +463,13 @@ public class ControlPanelController {
             taskViewController = fxmlLoader.getController();
 
             root.getStylesheets().add(themeCSSPath);
-            taskViewController.setAppController(this);
+            //taskViewController.setAppController(this);
             taskViewController.setTaskView(taskArgs);
             this.taskViewScreen = (ScrollPane) root;
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-/*    public void showSerialSetSummary() {
-        if (serialSetScreen == null)
-            createSerialSet();
-        if (mainScreen.getRight() == serialSetScreen)
-            mainScreen.setRight(null);
-        else
-            mainScreen.setRight(serialSetScreen);
-    }
-
-    private void createSerialSet() {
-        try {
-            URL url = getClass().getResource("/resources/fxml/serialSetView.fxml");
-            FXMLLoader fxmlLoader = new FXMLLoader(url);
-            fxmlLoader.setLocation(url);
-            Parent root = fxmlLoader.load();
-            SerialSetController serialSetController = fxmlLoader.getController();
-
-            root.getStylesheets().add(themeCSSPath);
-            serialSetController.setAppController(this, execution);
-            serialSetController.setSerialSet();
-
-            this.serialSetScreen = (ScrollPane) root;
-        } catch (IOException e) {
-            //e.printStackTrace();
-        }
-    }*/
 
     public void setTaskViewController(TaskViewController taskViewController) {
         this.taskViewController = taskViewController;
@@ -476,6 +493,11 @@ public class ControlPanelController {
 
     public void setNumberOfThreads(Integer value) {
         //execution.setNumberOfThreads(value);
+    }
+
+    public void setDashboardController(DashBoardController dashBoardController) {
+        this.dashBoardController = dashBoardController;
+        dashBoardController.setAppController(this);
     }
     //----------------------------------------------- task view ----------------------------------------------------- //
 }

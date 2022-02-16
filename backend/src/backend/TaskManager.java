@@ -2,10 +2,9 @@ package backend;
 
 import argumentsDTO.CommonEnums.*;
 import argumentsDTO.TaskArgs;
-import backend.xmlhandler.GPUPTarget;
-import com.sun.corba.se.impl.orbutil.graph.Graph;
 import dataTransferObjects.GraphInfoDTO;
 import dataTransferObjects.TaskInfoDTO;
+import dataTransferObjects.UpdateListsDTO;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -63,7 +62,7 @@ public class TaskManager {
     }
 
     public void activateTask() {
-        task.run(System.out::println);
+        //task.run(System.out::println);
     }
 
     public void addUser(String userName) {
@@ -112,10 +111,6 @@ public class TaskManager {
             task.resumeTask();
     }
 
-    public void setNumberOfThreads(Integer value) {
-        if (task != null)
-            task.changeNumberOfThreads(value);
-    }
 
     public void addWorker(String workerName) {
         registeredUsers.add(workerName);
@@ -123,5 +118,9 @@ public class TaskManager {
 
     public void removeWorker(String workerName) {
         registeredUsers.remove(workerName);
+    }
+
+    public UpdateListsDTO getUpdateListsDTO() {
+        return task.getUpdateListsDTO();
     }
 }

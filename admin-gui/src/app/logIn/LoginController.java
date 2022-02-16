@@ -90,6 +90,7 @@ public class LoginController {
             Scene scene = new Scene(root);
             DashBoardController controller = fxmlLoader.getController();
             controller.setDashBoard(userNameTextField.getText().replaceAll("[^a-zA-Z0-9]", ""));
+            controller.setDashBoardController(primaryStage);
             primaryStage.setScene(scene);
         } catch (IOException e) {
             e.printStackTrace();

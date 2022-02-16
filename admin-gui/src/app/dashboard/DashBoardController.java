@@ -1,7 +1,11 @@
 package app.dashboard;
 
 import app.mainScreen.ControlPanelController;
+import app.taskView.TaskViewController;
 import app.util.http.HttpClientUtil;
+import argumentsDTO.CompilationArgs;
+import argumentsDTO.SimulationArgs;
+import argumentsDTO.TaskArgs;
 import com.google.gson.reflect.TypeToken;
 import dataTransferObjects.GraphInfoDTO;
 import dataTransferObjects.UserDto;
@@ -24,7 +28,11 @@ import resources.Constants;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.*;
+
+import static app.util.FXUtils.handleErrors;
 
 public class DashBoardController {
 
@@ -85,12 +93,16 @@ public class DashBoardController {
     @FXML
     private ScrollPane dashboardScrollPane;
 
-    private final Timer timer = new Timer();
-    private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
     private String userName;
+    private final Timer timer = new Timer();
+    private ControlPanelController controlPanelController;
+    private Map<String, Scene> taskViews = new HashMap<>();
+    private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
+    private Stage primaryStage;
 
     // ---------------------------------------------------- init ---------------------------------------------------- //
     public void setDashBoard(String username) {
+
         loggedInAs.setText("Hello " + username + "!");
         this.userName = username;
         initUserTable();
@@ -111,7 +123,78 @@ public class DashBoardController {
             }
         });
 
+        pendingWorkListView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                String newValue = pendingWorkListView.getSelectionModel().getSelectedItem();
+                if (newValue != null && !newValue.isEmpty()) {
+                    if (taskViews.containsKey(newValue)) {
+                        switchToTaskView(newValue);
+                    } else {
+                        fetchTaskViewFromServer(newValue);
+                    }
+                }
+            }
+        });
+
         scheduleTasksFetching();
+    }
+
+    private void fetchTaskViewFromServer(String taskName) {
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/task-view-data")
+                .newBuilder()
+                .addQueryParameter("task-name", taskName)
+                .build()
+                .toString();
+
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Could not fetch task view data");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String[] responseBody = response.body().string().split("~~~");
+                if (response.isSuccessful()) {
+                    Type type;
+                    if ("SIMULATION".equals(responseBody[0])) {
+                        type = new TypeToken<SimulationArgs>() {
+                        }.getType();
+                    } else {
+                        type = new TypeToken<CompilationArgs>() {
+                        }.getType();
+                    }
+                    createNewTaskController(taskName, HttpClientUtil.GSON.fromJson(responseBody[1], type));
+                } else {
+                    handleErrors(null, responseBody[0], "Could not fetch task view data");
+                }
+            }
+        });
+    }
+
+    private void createNewTaskController(String taskName, TaskArgs taskArgs) {
+        try {
+            URL url = getClass().getResource("/resources/fxml/TaskView.fxml");
+            FXMLLoader fxmlLoader = new FXMLLoader(url);
+            fxmlLoader.setLocation(url);
+            Parent root = fxmlLoader.load();
+            Scene scene = new Scene(root);
+            TaskViewController taskViewController = fxmlLoader.getController();
+
+            //taskViewController.setAppController(controlPanelController);
+            taskViews.put(taskName, scene);
+            Platform.runLater(() -> {
+                taskViewController.setPrimaryStage(primaryStage);
+                taskViewController.setTaskView(taskArgs);
+                switchToTaskView(taskName);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void switchToTaskView(String taskName) {
+        primaryStage.setScene(taskViews.get(taskName));
     }
 
     private void initUserTable() {
@@ -157,7 +240,6 @@ public class DashBoardController {
                 fetchTasksFromServer();
             }
         }, 0, Constants.REFRESH_RATE);
-
     }
 
     private void fetchTasksFromServer() {
@@ -293,7 +375,6 @@ public class DashBoardController {
         if (usersNames.size() == userHistoryObsList.size())
             return;
         Platform.runLater(() -> {
-            //userHistoryObsList = usersTable.getItems();
             userHistoryObsList.clear();
             userHistoryObsList.addAll(usersNames);
         });
@@ -317,8 +398,8 @@ public class DashBoardController {
 
                 @Override
                 public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                    String errorMessage = response.body().string();
                     if (response.code() != 200) {
-                        String errorMessage = response.body().string();
                         handleErrors(null, errorMessage, "Error loading graph");
                     } else {
                         System.out.println("Success");
@@ -366,6 +447,7 @@ public class DashBoardController {
             Parent root = loader.load();
             ControlPanelController graphController = loader.getController();
             graphController.setControlPanel(graphName, dashboardScrollPane, userName);
+            graphController.setDashboardController(this);
             ((Stage) dashboardScrollPane.getScene().getWindow()).setScene(new Scene(root));
         } catch (IOException e) {
             e.printStackTrace();
@@ -374,18 +456,11 @@ public class DashBoardController {
     // ---------------------------------------------- control panel --------------------------------------------------//
 
 
-    public void handleErrors(Exception e, String bodyMessage, String headerMessage) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error occurred");
-            alert.setHeaderText(headerMessage);
-            if (e != null) {
-                alert.setContentText(e.getMessage());
-            } else {
-                alert.setContentText(bodyMessage);
-            }
-            alert.showAndWait();
-        });
+    public void setAppController(ControlPanelController controlPanelController) {
+        this.controlPanelController = controlPanelController;
     }
 
+    public void setDashBoardController(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+    }
 }

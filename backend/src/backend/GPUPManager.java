@@ -2,6 +2,7 @@ package backend;
 
 import argumentsDTO.CommonEnums.*;
 import argumentsDTO.CommonEnums.RelationType;
+import argumentsDTO.TaskArgs;
 import dataTransferObjects.*;
 
 import java.util.*;
@@ -151,4 +152,11 @@ public class GPUPManager {
         );
     }
 
+    public UpdateListsDTO getUpdateListsDTO(String taskName) {
+        return tasks.get(taskName).getUpdateListsDTO();
+    }
+
+    public TaskArgs getTaskArgs(String taskName) {
+        return tasks.get(taskName).getTaskArgs();
+    }
 }

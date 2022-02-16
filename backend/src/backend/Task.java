@@ -6,13 +6,12 @@ import argumentsDTO.TaskArgs;
 import argumentsDTO.TimeUtil;
 import argumentsDTO.accumulatorForWritingToFile;
 import backend.serialSets.SerialSetManger;
-import dataTransferObjects.GraphInfoDTO;
+import dataTransferObjects.UpdateListsDTO;
 import javafx.application.Platform;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -28,38 +27,41 @@ public abstract class Task implements Serializable {
     Consumer<accumulatorForWritingToFile> finishedTargetLog;
     private final String WORKING_DIR = "c:\\gpup-working-dir";
     List<accumulatorForWritingToFile> logData = new LinkedList<>();
+    private String serverFullPath;
+    private long startTime;
+
+    public Set<String> frozenSet = new HashSet<>();
+    public Set<String> warningSet = new HashSet<>();
+    public Set<String> skippedSet = new HashSet<>();
+    public Set<String> SuccessSet = new HashSet<>();
+    public Set<String> inProcessSet = new HashSet<>();
+    public Set<String> waitingSet = new HashSet<>();
+    public Set<String> failedSet = new HashSet<>();
+    public UpdateListsDTO updateListsDTO = new UpdateListsDTO();
 
     //probably will be removed
-    Thread mainThread;
     int numberOfThreads;
-    boolean flag = false;
     ThreadPoolExecutor threadPool;
     private int numberOfThreadActive = 0;
-    final SerialSetManger serialSetManger;
-    final Object monitorObj = new Object();
-    BlockingQueue<Runnable> threadPoolTaskQueue;
+
 
     public void pauseTask() {
-        flag = true;
     }
 
     public void resumeTask() {
-        flag = false;
-        synchronized (monitorObj) {
-            monitorObj.notifyAll();
-        }
+
     }
 
     private void pauseThreadTask() {
-        if (flag) {
-            synchronized (monitorObj) {
-                try {
-                    monitorObj.wait();
-                } catch (InterruptedException e) {
-                    //e.printStackTrace();
-                }
-            }
-        }
+
+    }
+
+    public UpdateListsDTO getUpdateListsDTO() {
+        updateListsDTO.setAll(
+                frozenSet, warningSet, skippedSet, SuccessSet,
+                inProcessSet, waitingSet, failedSet);
+
+        return updateListsDTO;
     }
 
     private synchronized void updateNumberOfActiveThreads(boolean isUp) {
@@ -77,7 +79,7 @@ public abstract class Task implements Serializable {
                 int numberOfThreads, GraphManager graphManager,
                 Consumer<accumulatorForWritingToFile> finishedTargetLog, Consumer<ProgressDto> finishedTarget) {
         this.numberOfThreads = numberOfThreads;
-        this.serialSetManger = serialSetManger;
+        //this.serialSetManger = serialSetManger;
         this.allGraphHasBeenProcessed = allGraphHasBeenProcessed;
         setConsumers(finishedTargetLog, finishedTarget);
         buildTaskGraph(graphManager);
@@ -87,7 +89,9 @@ public abstract class Task implements Serializable {
         for (Target target : graphManager.getTargetArray()) {
             TaskTarget taskTarget = new TaskTarget(target);
             if (target.getState() == TargetState.WAITING) {
-                //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(target.getName(), target.getState())));
+                waitingSet.add(target.getName());
+            } else {
+                frozenSet.add(target.getName());
             }
             graph.put(target.getName(), taskTarget);
         }
@@ -103,55 +107,33 @@ public abstract class Task implements Serializable {
         return allGraphHasBeenProcessed;
     }
 
-    protected void setPoolSize() {
- /*       if (threadPool == null || threadPool.isShutdown()) {
-            threadPool = new ThreadPoolExecutor(numberOfThreads, numberOfThreads,
-                    1, TimeUnit.MILLISECONDS, threadPoolTaskQueue == null ?
-                    new LinkedBlockingQueue<>() :
-                    threadPoolTaskQueue
-            );
-            return;
-        }
-        threadPool.setCorePoolSize(numberOfThreads);
-        threadPool.setMaximumPoolSize(numberOfThreads);*/
-    }
 
-    public void changeNumberOfThreads(int newThreadsCount) {
-  /*      if (newThreadsCount != numberOfThreads && newThreadsCount > 0 && newThreadsCount <= maxParallelism) {
+/*    public void changeNumberOfThreads(int newThreadsCount) {
+        if (newThreadsCount != numberOfThreads && newThreadsCount > 0 && newThreadsCount <= maxParallelism) {
             numberOfThreads = newThreadsCount;
             setPoolSize();
-        }*/
-    }
-
+        }
+    }*/
     // ---------------------------------------------- ctor and utils ------------------------------------------------ //
 
 
     // --------------------------------------------------- run ------------------------------------------------------ //
-    public void run(Consumer<String> print) {
-        setPoolSize();
-        mainThread = Thread.currentThread();
-        accumulatorForWritingToFile resOfTargetTaskRun;
-        long graphRunStartTime = System.currentTimeMillis();
-        String fullPath = createDirectoryToLogData(graphRunStartTime);
+    public void activateRun() {
+        startTime = System.currentTimeMillis();
+        serverFullPath = createDirectoryToLogData(startTime);
+    }
 
-        while (numberOfFinishedTargets < waitingList.size()) {
-            for (int i = 0; i < waitingList.size(); i++) {
-                pauseThreadTask();
-                TaskTarget targetToExecute = graph.get(waitingList.get(i));
-                if (targetToExecute.state.equals(TargetState.WAITING) && serialSetManger.canIRun(targetToExecute.name)) {
-                    targetToExecute.state = TargetState.IN_PROCESS;
-                    targetToExecute.enterProcess = System.currentTimeMillis();
-                    resOfTargetTaskRun = new accumulatorForWritingToFile();
-                    //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(targetToExecute.name, TargetState.IN_PROCESS)));
-                    accumulatorForWritingToFile finalResOfTargetTaskRun = resOfTargetTaskRun;
-                    sendToNewThreadAndPushToPool(print, fullPath, targetToExecute, finalResOfTargetTaskRun);
-                }
-            }
-        }
-        threadPool.shutdown();
-        printRunSummary(print, graphRunStartTime);
-        numberOfFinishedTargets = 0;
-        numberOfThreadActive = 0;
+    public boolean isTaskFinished() {
+        return waitingList.isEmpty();
+    }
+
+    public TaskTarget getWork() {
+        TaskTarget targetToExecute = graph.get(waitingList.remove(0));
+        targetToExecute.state = TargetState.IN_PROCESS;
+        targetToExecute.enterProcess = System.currentTimeMillis();
+        waitingSet.remove(targetToExecute.name);
+        inProcessSet.add(targetToExecute.name);// consider saving to which worker it was assigned
+        return targetToExecute;
     }
 
     public long getWaitingStartTime(String targetName) {
@@ -184,22 +166,16 @@ public abstract class Task implements Serializable {
                 (graphRunEndTime - graphRunStartTime) / 1000 +
                 "." + (graphRunEndTime - graphRunStartTime) % 1000 +
                 " s");
-        simulationRunSummary(print);
+        //simulationRunSummary(print);
     }
 
-    private void sendToNewThreadAndPushToPool(Consumer<String> print, String fullPath, TaskTarget targetToExecute, accumulatorForWritingToFile finalResOfTargetTaskRun) {
+    private void sendToNewThreadAndPushToPool(String fullPath, TaskTarget targetToExecute, accumulatorForWritingToFile finalResOfTargetTaskRun) {
         Thread t = new Thread(() -> {
             pauseThreadTask();
             updateNumberOfActiveThreads(true);
-            runTaskOnTarget(targetToExecute, finalResOfTargetTaskRun, print);
-       /*     Platform.runLater(() -> {
-                finishedTargetLog.accept(finalResOfTargetTaskRun);
-                finishedTarget.accept(new ProgressDto(getNamesToRunLater(targetToExecute, finalResOfTargetTaskRun), targetToExecute.state));
-            });*/
+            runTaskOnTarget(targetToExecute, finalResOfTargetTaskRun);
             writeTargetResultsToLogFile(finalResOfTargetTaskRun, fullPath);
             logData.add(finalResOfTargetTaskRun);
-            targetSummary(finalResOfTargetTaskRun, print);
-            serialSetManger.finishRunning(targetToExecute.name); // this is a synchronized method
             incrementFinishedThreadsCount();
             updateNumberOfActiveThreads(false);
         }, "thread #: " + numberOfFinishedTargets);
@@ -315,8 +291,7 @@ public abstract class Task implements Serializable {
         }
     }
 
-    protected void invokeConsumer(TaskTarget targetToExecute, accumulatorForWritingToFile
-            resOfTargetTaskRun, Consumer<String> print) {
+    protected void invokeConsumer(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun) {
         resOfTargetTaskRun.outPutData.add(
                 "3. task finished running on - " + targetToExecute.name + " task results: " + targetToExecute.state);
 
@@ -364,8 +339,6 @@ public abstract class Task implements Serializable {
     // --------------------------------------------------- run ------------------------------------------------------ //
 
 
-    // --------------------------------------------------- run ------------------------------------------------------ //
-
     // ------------------------------------------------- getReady --------------------------------------------------- //
     public void getReadyForIncrementalRun(TaskArgs taskArgs) {
 
@@ -404,8 +377,7 @@ public abstract class Task implements Serializable {
     // ----------------------------------------- abstract Methods --------------------------------------------------- //
     abstract void updateMembersAccordingToTask(TaskArgs taskArgs);
 
-    abstract void runTaskOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun,
-                                  Consumer<String> print);
+    abstract void runTaskOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun);
 
     // ----------------------------------------- abstract Methods --------------------------------------------------- //
 

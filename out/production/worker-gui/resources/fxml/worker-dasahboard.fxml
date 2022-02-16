@@ -75,7 +75,7 @@
                   <Insets left="20.0" />
                </GridPane.margin>
             </TableView>
-            <Label fx:id="loggedInAs" text="Hello " GridPane.columnIndex="1" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="TOP">
+            <Label fx:id="loggedInAs" text="Hello " GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="TOP">
                <font>
                   <Font size="18.0" />
                </font>

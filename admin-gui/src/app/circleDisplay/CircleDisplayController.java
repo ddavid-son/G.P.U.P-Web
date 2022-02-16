@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static app.util.FXUtils.handleErrors;
+
 public class CircleDisplayController {
     @FXML
     private HBox targetChooserBox;
@@ -38,42 +40,9 @@ public class CircleDisplayController {
     public void setAppController(ControlPanelController appController, String engineName) {
         this.appController = appController;
         this.engineName = engineName;
-        //getAllTargets(appController, engineName);
     }
 
-   /* private void getAllTargets(ControlPanelController appController, String engineName) {
-        String finalUrl = HttpUrl.parse(
-                        Constants.FULL_SERVER_PATH + "/get-all-targets")
-                .newBuilder()
-                .addQueryParameter("engine-name", engineName)
-                .toString();
-
-
-        HttpClientUtil.runAsync(finalUrl, new Callback() {
-            @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                appController.handleErrors(e, "", "Error fetching targets");
-            }
-
-            @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                if (response.code() != 200) {
-                    appController.handleErrors(null,
-                            "Could not acquire targets, please try again",
-                            "Error fetching targets");
-                } else {
-                    String s = response.body().string();
-                    displayCircles(
-                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
-                            }.getType())
-                    );
-                }
-            }
-        });
-    }*/
-
     public void displayCircles(List<String> allTargetNames) {
-        //targetChooserBox.getChildren().addAll(createTextFields(allTargetNames, execution));
         Platform.runLater(() -> targetChooserBox.getChildren().addAll(createCircleNode(allTargetNames)));
     }
 
@@ -117,17 +86,15 @@ public class CircleDisplayController {
         HttpClientUtil.runAsync(finalUrl, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                appController.handleErrors(e, "", "Couldn't fetch circle data");
+                handleErrors(e, "", "Couldn't fetch circle data");
             }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String[] s = response.body().string().split("~~~");
                 if (response.code() != 200) {
-                    appController.handleErrors(null, response.message(), "Couldn't fetch circle data");
+                    handleErrors(null, response.message(), "Couldn't fetch circle data");
                 } else {
-                    String[] s = response.body().string().split("~~~");
-                    response.body().close();
-
                     updateCircleView(s[0],
                             HttpClientUtil.GSON.fromJson(s[1], new TypeToken<List<String>>() {
                             }.getType())

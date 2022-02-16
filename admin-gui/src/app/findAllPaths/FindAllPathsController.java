@@ -21,6 +21,8 @@ import resources.Constants;
 import java.io.IOException;
 import java.util.List;
 
+import static app.util.FXUtils.handleErrors;
+
 public class FindAllPathsController {
     @FXML
     private ComboBox<String> srcComboBox;
@@ -54,7 +56,6 @@ public class FindAllPathsController {
     public void OnSwapSrcToDestBtn(ActionEvent event) {
         String src = srcComboBox.getValue();
         String dst = dstComboBox.getValue();
-        //swapping safely to not fire unwanted http request
         srcComboBox.setValue("");
         dstComboBox.setValue(src);
         srcComboBox.setValue(dst);
@@ -105,14 +106,14 @@ public class FindAllPathsController {
         HttpClientUtil.runAsync(finalUrl, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                appController.handleErrors(e, "", "Couldn't fetch data from server");
+                handleErrors(e, "", "Couldn't fetch data from server");
             }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.code() != 200) {
                     String s = response.body().string();
-                    appController.handleErrors(null, s, "Error fetching all Paths");
+                    handleErrors(null, s, "Error fetching all Paths");
                 } else {
                     String s = response.body().string();
                     updateAllPathsView(

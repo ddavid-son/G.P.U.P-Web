@@ -34,8 +34,7 @@ public class CompilationTask extends Task {
 
     // ---------------------------- includes internal logic specific to CompilationTask -----------------------------  //
     @Override
-    protected void runTaskOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun,
-                                   Consumer<String> print) {
+    protected void runTaskOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun) {
         try {
             resOfTargetTaskRun.startTime = System.currentTimeMillis();
             String fullCommand = getFullCommand(targetToExecute, resOfTargetTaskRun);

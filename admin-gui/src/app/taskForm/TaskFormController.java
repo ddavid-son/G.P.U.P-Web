@@ -4,9 +4,6 @@ import app.mainScreen.ControlPanelController;
 import app.sideMenu.SideMenuController;
 import argumentsDTO.CommonEnums.*;
 import argumentsDTO.*;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.VPos;
@@ -17,6 +14,8 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+
+import static app.util.FXUtils.handleErrors;
 
 public class TaskFormController {
 
@@ -168,7 +167,7 @@ public class TaskFormController {
     private void runCompilationTask(boolean isIncremental) {
         if (!(!compilationTaskNameTF.getText().isEmpty() && srcFolder != null &&
                 dstFolder != null && srcFolder.exists() && dstFolder.exists())) {
-            appController.handleErrors(
+            handleErrors(
                     null,
                     "Source and destination folders must be set before running a compilation task.",
                     "error - source or destination folder wasn't set"
@@ -267,7 +266,7 @@ public class TaskFormController {
 
     private void runSimulationTask(boolean isIncremental) {
         if (assertSimulationUserInput()) {
-            appController.handleErrors(
+            handleErrors(
                     null,
                     "Please fill all the fields - dont leave any field empty",
                     "Error in arguments that was inserted"

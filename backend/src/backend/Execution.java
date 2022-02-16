@@ -217,8 +217,8 @@ public class Execution implements Engine, Serializable {
     }
 
     public void setNumberOfThreads(Integer value) {
-        if (task != null)
-            task.changeNumberOfThreads(value);
+/*        if (task != null)
+            task.changeNumberOfThreads(value);*/
     }
     //--------------------------------------------------- run task ---------------------------------------------------//
 

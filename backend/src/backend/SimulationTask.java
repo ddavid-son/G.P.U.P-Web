@@ -43,23 +43,22 @@ public class SimulationTask extends Task implements Serializable {
 
     // ---------------------------- includes internal logic specific to simulationTask -----------------------------  //
     @Override
-    protected void runTaskOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun,
-                                   Consumer<String> print) {
+    protected void runTaskOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun) {
         resOfTargetTaskRun.outPutData.add("1. task started, running on - " + targetToExecute.name);
 
         resOfTargetTaskRun.outPutData.add("2. text on target - " +
                 (targetToExecute.userData.isEmpty() ? "no text" : targetToExecute.userData));
 
-        performSimulation(resOfTargetTaskRun, print);
+        performSimulation(resOfTargetTaskRun);
 
         updateGraphAccordingToTheResults(targetToExecute, resOfTargetTaskRun);
         resOfTargetTaskRun.targetState = targetToExecute.state;
         resOfTargetTaskRun.targetName = targetToExecute.name;
 
-        invokeConsumer(targetToExecute, resOfTargetTaskRun, print);
+        invokeConsumer(targetToExecute, resOfTargetTaskRun);
     }
 
-    private void performSimulation(accumulatorForWritingToFile resOfTargetTaskRun, Consumer<String> print) {
+    private void performSimulation(accumulatorForWritingToFile resOfTargetTaskRun) {
         resOfTargetTaskRun.startTime = System.currentTimeMillis();
         Timestamp ts = new Timestamp(resOfTargetTaskRun.startTime);
         try {

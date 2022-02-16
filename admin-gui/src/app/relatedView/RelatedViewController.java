@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static app.util.FXUtils.handleErrors;
+
 public class RelatedViewController {
 
     @FXML
@@ -76,14 +78,14 @@ public class RelatedViewController {
         HttpClientUtil.runAsync(finalUrl, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                appController.handleErrors(e, "", "Couldn't fetch data from server");
+                handleErrors(e, "", "Couldn't fetch data from server");
             }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 String s = response.body().string();
                 if (response.code() != 200) {
-                    appController.handleErrors(null, s, "Error fetching all Paths");
+                    handleErrors(null, s, "Error fetching all Paths");
                 } else {
                     Platform.runLater(() -> consumer.accept(
                             HttpClientUtil.GSON.fromJson(s, new TypeToken<WhatIfDTO>() {
