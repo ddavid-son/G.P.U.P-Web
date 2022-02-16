@@ -15,13 +15,15 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
-import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -31,6 +33,7 @@ import static app.Utils.FXUtil.handleErrors;
 public class WorkerDashboardController {
 
     public TableColumn<TaskInfoDTO, Boolean> taskEnrolledCol;
+    public HBox regHBox;
     @FXML
     private ScrollPane workerDashboardScrollPane;
 
@@ -83,12 +86,30 @@ public class WorkerDashboardController {
     private TableColumn<TaskInfoDTO, String> taskTypeCol;
 
     @FXML
+    private Label resLogLabel;
+
+    @FXML
+    private Label walletLabel;
+
+    @FXML
+    private Button leaveTaskBtn;
+
+    @FXML
+    private Button joinTaskBtn;
+
+
+    @FXML
     private TableColumn<TaskInfoDTO, Rectangle> TaskEnrolledCol;
     //private TableColumn<TaskInfoDTO, String> TaskEnrolledCol;
 
     private Stage primaryStage;
     private final Timer timer = new Timer();
     private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
+    private final List<String> tasksImIn = new ArrayList<>();
+    private String workerName;
+    private int numberOfThreads;
+    private int cash = 0;
+
 
     @FXML
     void onLoadGraphBtnClicked(ActionEvent event) {
@@ -96,15 +117,19 @@ public class WorkerDashboardController {
     }
 
     // init
-    public void setDashBoard(String username, Stage primaryStage) {
+    public void setDashBoard(String username, Stage primaryStage, int numberOfThreads) {
         initUserTable();
         scheduleUsersFetching();
-        loggedInAs.setText("Hello " + username + "!");
+        this.workerName = username;
         this.primaryStage = primaryStage;
+        this.numberOfThreads = numberOfThreads;
+        //walletLabel.setText("Wallet: " + cash);
+        walletLabel.textProperty().bind(new SimpleStringProperty("Wallet: " + cash));
+        loggedInAs.setText("Hello " + username + "!");
 
         scheduleTasksFetching();
         taskHeaderTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null && !newValue.isEmpty() && !newValue.equals(oldValue)) {
+            if (newValue != null && !newValue.isEmpty()) {
                 fetchGraphPeekFromServer(newValue);
             }
         });
@@ -114,6 +139,7 @@ public class WorkerDashboardController {
         String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-task-peek")
                 .newBuilder()
                 .addQueryParameter("task-name", taskName)
+                .addQueryParameter("user-name", workerName)
                 .build()
                 .toString();
 
@@ -147,7 +173,6 @@ public class WorkerDashboardController {
                 new SimpleStringProperty(cellData.getValue().getRole()));
         usersTable.setItems(userHistoryObsList);
     }
-
 
     private void updateTaskPeekTable(TaskInfoDTO taskInfoDTO) {
         ObservableList<TaskInfoDTO> taskInfoObs = FXCollections.observableArrayList(taskInfoDTO);
@@ -188,9 +213,70 @@ public class WorkerDashboardController {
 
         taskPeekTable.setItems(taskInfoObs);
     }
+    // init
+
+
+    // ------------------------------------------------- task ------------------------------------------------//
+    private void taskRegistration(String taskName, boolean joinOrLeave) {
+
+        if (assertTaskCredentials(taskName, joinOrLeave)) {
+            resLogLabel.setText(joinOrLeave ?
+                    "You are already in " + taskName + " task" :
+                    "You aren't part of " + taskName + " task");
+            return;
+        }
+
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/task-registration")
+                .newBuilder()
+                .addQueryParameter("task-name", taskName)
+                .addQueryParameter("user-name", workerName)
+                .addQueryParameter("join", joinOrLeave ? "join" : "leave")
+                .build()
+                .toString();
+
+        HttpUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, " ", "Error, couldn't " + (joinOrLeave ? "join" : "leave") + " task");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();
+                if (response.isSuccessful()) {
+                    Platform.runLater(() -> resLogLabel.setText("Successfully " + (joinOrLeave ? "joined" : "left") + " task " + taskName));
+                } else {
+                    handleErrors(null,
+                            responseBody,
+                            "Error, couldn't " + (joinOrLeave ? "join" : "leave") + " task"
+                    );
+                }
+            }
+        });
+    }
+
+    private boolean assertTaskCredentials(String taskName, boolean joinOrLeave) {
+        if (joinOrLeave) {
+            return taskName != null && taskName.isEmpty() && !tasksImIn.contains(taskName) &&
+                    !taskStatusCol.getText().equals("FINISHED") && !taskStatusCol.getText().equals("CANCELLED");
+        } else {
+            return taskName != null && taskName.isEmpty() && tasksImIn.contains(taskName);
+        }
+    }
+
+    @FXML
+    void onJoinTaskBtnClicked(ActionEvent event) {
+        taskRegistration(taskHeaderTable.getSelectionModel().getSelectedItem(), true);
+    }
+
+    @FXML
+    void onLeaveTaskBtnClicked(ActionEvent event) {
+        taskRegistration(taskHeaderTable.getSelectionModel().getSelectedItem(), false);
+    }
+    // ------------------------------------------------- task ------------------------------------------------//
+
 
     // ------------------------------------------------- task update ------------------------------------------------//
-
     private void scheduleTasksFetching() {
         timer.schedule(new TimerTask() {
             @Override
@@ -222,7 +308,6 @@ public class WorkerDashboardController {
             }
         });
     }
-
     // ------------------------------------------------- task update ------------------------------------------------//
 
 

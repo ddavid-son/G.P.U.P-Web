@@ -110,7 +110,7 @@ public class WorkerLoginController {
             Parent root = fxmlLoader.load(url.openStream());
             Scene scene = new Scene(root);
             WorkerDashboardController controller = fxmlLoader.getController();
-            controller.setDashBoard(username, primaryStage);
+            controller.setDashBoard(username, primaryStage, threadsSpinner.getValue());
             primaryStage.setScene(scene);
         } catch (IOException e) {
             e.printStackTrace();

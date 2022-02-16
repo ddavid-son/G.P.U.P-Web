@@ -18,12 +18,13 @@ public class TaskPeekServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String taskName = request.getParameter("task-name");
+        String userName = request.getParameter("user-name");
 
         if (ServletUtils.getGPUPManager(request).taskExists(taskName)) {
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(
                     SessionUtils.GSON.toJson(
-                            ServletUtils.getGPUPManager(request).getTaskInfo(taskName),
+                            ServletUtils.getGPUPManager(request).getTaskInfo(taskName, userName),
                             new TypeToken<TaskInfoDTO>() {
                             }.getType()
                     )

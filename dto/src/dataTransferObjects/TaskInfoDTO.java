@@ -73,6 +73,10 @@ public class TaskInfoDTO {
         isEnrolled = enrolled;
     }
 
+    public void setEnrolled(String worker) {
+        isEnrolled = enrolledWorker.contains(worker);
+    }
+
     public TaskStatus getTaskStatus() {
         return taskStatus;
     }

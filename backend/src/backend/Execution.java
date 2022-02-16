@@ -182,6 +182,7 @@ public class Execution implements Engine, Serializable {
         createTask(taskArgs);
 
         TaskManager taskManager = new TaskManager(task);
+        taskManager.setTaskArgs(taskArgs);
         taskManager.setPrices(simulationPrice, compilationPrice);
         taskManager.setManagerData(taskArgs.getOriginalGraph(), taskArgs.getTaskName(), taskArgs.getTaskOwner());
 

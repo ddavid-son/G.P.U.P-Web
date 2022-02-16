@@ -495,30 +495,11 @@ public class TaskViewController {
                 if (!response.isSuccessful()) {
                     System.out.println(responseBody);
                     appController.handleErrors(null, responseBody, "Error! could not create the task");
+                } else {
+                    // update label with success info
                 }
             }
         });
-
-        /*    Thread thread = new Thread(() -> {
-            try {
-                playPauseBtn.setDisable(false);
-                long start = System.currentTimeMillis();
-                //execution.runTaskOnGraph(taskArgs, this::handelLogOfTask, this::handelFinishedTask);
-                long end = System.currentTimeMillis();
-                Platform.runLater(() -> {
-                    playPauseBtn.setDisable(true);
-                    showSummaryWindow(end - start);
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> appController.handleErrors(
-                        e,
-                        e.getMessage(),
-                        "Error running task"));
-            }
-            // TODO: maybe down here will handle the summary data fetching with runLater to update the UI
-        });
-        thread.setName("Task thread");
-        thread.start();*/
     }
 
     @NotNull

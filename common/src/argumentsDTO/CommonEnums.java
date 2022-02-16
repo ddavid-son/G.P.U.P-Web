@@ -20,7 +20,7 @@ public class CommonEnums {
         NEW,     // CREATED
         ACTIVE,  // PLAYED
         PAUSED,
-        STOPPED,
+        CANCELED,
         FINISHED
     }
 

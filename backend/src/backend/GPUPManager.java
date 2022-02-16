@@ -1,12 +1,10 @@
 package backend;
 
+import argumentsDTO.CommonEnums.*;
 import argumentsDTO.CommonEnums.RelationType;
 import dataTransferObjects.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -14,6 +12,7 @@ public class GPUPManager {
     private Map<String, Engine> GPUPEngines = new HashMap<>();
     private Map<String, User> users = new HashMap<>(); // jsessionid -> user name // now with username cookie this is no longer necessary
     private Map<String, TaskManager> tasks = new HashMap<>(); // taskName TO taskManager
+    private Map<String, User> username2User = new HashMap<>();
 
     // ctor and utils refreshers
     public GPUPManager() {
@@ -58,16 +57,33 @@ public class GPUPManager {
         return new ArrayList<>(tasks.keySet());
     }
 
+
     // worker dashboard
-    public TaskInfoDTO getTaskInfo(String taskName) {
+    public TaskInfoDTO getTaskInfo(String taskName, String userName) {
         if (tasks.containsKey(taskName)) {
-            return tasks.get(taskName).getTaskDto();
+            return tasks.get(taskName).getTaskDto(userName);
         }
         return null;
     }
 
     public boolean taskExists(String taskName) {
         return tasks.containsKey(taskName);
+    }
+
+
+    public boolean taskInCompatibleState(String taskName, String joinOrLeave) {
+        if (joinOrLeave.equals("join"))
+            return tasks.get(taskName).getStatus().equals(TaskStatus.CANCELED) ||
+                    tasks.get(taskName).getStatus().equals(TaskStatus.FINISHED);
+        return true;
+    }
+
+    public void joinTask(String taskName, String workerName) {
+        tasks.get(taskName).addWorker(workerName);
+    }
+
+    public void leaveTask(String taskName, String workerName) {
+        tasks.get(taskName).removeWorker(workerName);
     }
 
 
@@ -85,9 +101,18 @@ public class GPUPManager {
     }
 
     public void addUser(String jsessionid, String userName, String role) {
-        users.put(jsessionid, new User(userName, role));
+        User user = new User(userName, role);
+        users.put(jsessionid, user);
+        username2User.put(userName, user);
     }
 
+    public boolean userExists(String username) {
+        return username2User.containsKey(username);
+    }
+
+    public boolean userInRole(String username, String role) {
+        return userExists(username) && username2User.get(username).role.equals(role);
+    }
 
     // admin dashboard
     public List<String> getLoadedGraphs() {

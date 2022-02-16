@@ -1,6 +1,7 @@
 package backend;
 
 import argumentsDTO.CommonEnums.*;
+import argumentsDTO.TaskArgs;
 import backend.xmlhandler.GPUPTarget;
 import com.sun.corba.se.impl.orbutil.graph.Graph;
 import dataTransferObjects.GraphInfoDTO;
@@ -15,40 +16,46 @@ public class TaskManager {
     private Task task;
     private String taskName;
     private String ownerName;
+    private TaskArgs taskArgs;
+    private TaskInfoDTO myInfo;
     private String originalGraphName;
     private int simulationPrice = -1;
     private int compilationPrice = -1;
-    private Set<String> registeredUsers = new HashSet<>();
     private TaskStatus status = TaskStatus.NEW;
     private final GraphInfoDTO targetDistrbution;
-    private TaskInfoDTO myInfo;
+    private Set<String> registeredUsers = new HashSet<>();
 
     public String getTaskName() {
         return taskName;
     }
 
-    public TaskInfoDTO getTaskDto() {
+    public TaskInfoDTO getTaskDto(String userName) {
         if (myInfo == null) {
             myInfo = new TaskInfoDTO.Builder()
                     .setTaskName(taskName)
                     .setTaskOwner(ownerName)
                     .setTaskType(task instanceof SimulationTask ? TaskType.SIMULATION : TaskType.COMPILATION)
-                    .setIsEnrolled(registeredUsers.contains(ownerName))
+                    .setIsEnrolled(registeredUsers.contains(userName))
                     .setTaskStatus(status)
                     .setEnrolledWorker(new ArrayList<>(registeredUsers))
                     .setTargetDistribution(targetDistrbution)
                     .setPricePerTarget(task instanceof SimulationTask ? simulationPrice : compilationPrice)
                     .build();
         } else
-            updateTaskInfo();
+            updateTaskInfo(userName);
 
         return myInfo;
     }
 
-    private void updateTaskInfo() {
+    public String getStatus() {
+        return status.toString();
+    }
+
+    private void updateTaskInfo(String userName) {
         myInfo.setTaskStatus(status);
+        myInfo.getEnrolledWorker().clear();
         myInfo.getEnrolledWorker().addAll(registeredUsers);
-        myInfo.setEnrolled(registeredUsers.contains(ownerName));
+        myInfo.setEnrolled(registeredUsers.contains(userName));
     }
 
     public void getTargetsToExecute(String userName) {
@@ -72,6 +79,15 @@ public class TaskManager {
         targetDistrbution = new GraphInfoDTO();
         task.graph.values().forEach(target -> targetDistrbution.countTargetsByType(target.getType()));
     }
+
+    public void setTaskArgs(TaskArgs taskArgs) {
+        this.taskArgs = taskArgs;
+    }
+
+    public TaskArgs getTaskArgs() {
+        return taskArgs;
+    }
+
 
     public void setManagerData(String originalGraph, String taskName, String taskOwner) {
         this.taskName = taskName;
@@ -99,5 +115,13 @@ public class TaskManager {
     public void setNumberOfThreads(Integer value) {
         if (task != null)
             task.changeNumberOfThreads(value);
+    }
+
+    public void addWorker(String workerName) {
+        registeredUsers.add(workerName);
+    }
+
+    public void removeWorker(String workerName) {
+        registeredUsers.remove(workerName);
     }
 }

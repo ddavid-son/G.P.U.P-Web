@@ -419,7 +419,7 @@ public class ControlPanelController {
             taskViewController = fxmlLoader.getController();
 
             root.getStylesheets().add(themeCSSPath);
-            taskViewController.setAppController(this/*, execution*/);
+            taskViewController.setAppController(this);
             taskViewController.setTaskView(taskArgs);
             this.taskViewScreen = (ScrollPane) root;
         } catch (IOException e) {
