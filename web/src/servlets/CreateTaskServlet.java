@@ -25,8 +25,6 @@ public class CreateTaskServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        // get cookie
-        Cookie[] cookie = request.getCookies();
         String taskType = request.getParameter("task-type");
         String taskArgsJson = request.getReader().lines().collect(Collectors.joining());
         Type type;

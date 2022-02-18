@@ -29,13 +29,12 @@ public class SendResultsServlet extends HttpServlet {
             List<TaskTarget> targets = SessionUtils.GSON.fromJson(jsons[1], new TypeToken<List<TaskTarget>>() {
             }.getType());
 
-            if (targets.size() != accs.size() || targets.size() > 0) {
+            if (targets.size() != accs.size() || targets.size() == 0) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.getWriter().write("number of work done is inconsistent");
                 return;
             }
 
-            // needs to add threads to this method
             int totalEarnings = ServletUtils.getGPUPManager(request).acceptResults(targets, accs);
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write(String.valueOf(totalEarnings));
@@ -44,6 +43,11 @@ public class SendResultsServlet extends HttpServlet {
         }
 
 
+    }
+
+    @Override
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        doGet(request, response);
     }
 
 }

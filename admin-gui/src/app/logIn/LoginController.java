@@ -42,7 +42,7 @@ public class LoginController {
     @FXML
     private void loginButtonClicked(ActionEvent event) {
 
-        String userName = userNameTextField.getText();
+        String userName = userNameTextField.getText().trim();
         if (userNameTextField.getText().matches(".[0-9]$")) { // todo: need to be tested
             FXUtils.handleErrors(null, "Please enter name that doesnt end with a digit", "Invalid task name!");
             return;

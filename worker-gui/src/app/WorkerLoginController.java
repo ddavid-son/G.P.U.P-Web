@@ -45,11 +45,11 @@ public class WorkerLoginController {
     public void onLoginBtnClicked(ActionEvent actionEvent) {
 
         int threads = threadsSpinner.getValue();
-        if (userNameTF.getText().matches(".[0-9]$")) { // todo: need to be tested
+        String userName = userNameTF.getText().trim();
+        if (userName.matches(".[0-9]$")) { // todo: need to be tested
             FXUtil.handleErrors(null, "Please enter name that doesnt end with a digit", "Invalid task name!");
             return;
         }
-        String userName = userNameTF.getText();
 
         if (!assertParameters(threads, userName)) {
             FXUtil.handleErrors(null,
@@ -91,7 +91,7 @@ public class WorkerLoginController {
                             "couldn't log in due to authentication errors pleas try again later",
                             "Error while logging in");
                 } else {
-                    Platform.runLater(() -> switchToDashBoard());
+                    Platform.runLater(() -> switchToDashBoard(userName));
                 }
             }
         });
@@ -102,9 +102,8 @@ public class WorkerLoginController {
                 userName != null && !userName.isEmpty();
     }
 
-    private void switchToDashBoard() {
+    private void switchToDashBoard(String username) {
         try {
-            String username = userNameTF.getText().replaceAll("[^a-zA-Z0-9]", "").trim();
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource(Constants.DASHBOARD_FXML);
             fxmlLoader.setLocation(url);

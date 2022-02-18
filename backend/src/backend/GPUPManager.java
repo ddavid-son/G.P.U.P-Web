@@ -12,10 +12,11 @@ import java.util.stream.Collectors;
 
 
 public class GPUPManager {
-    private Map<String, Engine> GPUPEngines = new HashMap<>();
-    private Map<String, User> users = new HashMap<>(); // jsessionid -> user name // now with username cookie this is no longer necessary
-    private Map<String, TaskManager> tasks = new HashMap<>(); // taskName TO taskManager
-    private Map<String, User> username2User = new HashMap<>();
+    private final Map<String, Engine> GPUPEngines = new HashMap<>();
+    private final Map<String, User> users = new HashMap<>(); // jsessionid -> user name // now with username cookie this is no longer necessary
+    private final Map<String, TaskManager> tasks = new HashMap<>(); // taskName TO taskManager
+    private final Map<String, User> username2User = new HashMap<>();
+
 
     // ctor and utils refreshers
     public GPUPManager() {
@@ -91,23 +92,23 @@ public class GPUPManager {
 
     public boolean taskInCompatibleState(String taskName, String joinOrLeave) {
         if (joinOrLeave.equals("join"))
-            return tasks.get(taskName).getStatus().equals(TaskStatus.CANCELED) ||
-                    tasks.get(taskName).getStatus().equals(TaskStatus.FINISHED);
+            return tasks.get(taskName).getStatus().equals(TaskStatus.CANCELED.toString()) ||
+                    tasks.get(taskName).getStatus().equals(TaskStatus.FINISHED.toString());
         return true;
     }
 
     public void joinTask(String taskName, String workerName) {
         tasks.get(taskName).addWorker(workerName);
-        users.get(workerName).addTask(taskName);
+        username2User.get(workerName).addTask(taskName);
     }
 
     public void leaveTask(String taskName, String workerName) {
         tasks.get(taskName).removeWorker(workerName);
-        users.get(workerName).removeTask(taskName);
+        username2User.get(workerName).removeTask(taskName);
     }
 
     public List<TaskTarget> getWorkForWorker(String workerName, int askedWork) {
-        List<String> tasksImIn = users.get(workerName).tasksImIn;
+        List<String> tasksImIn = username2User.get(workerName).tasksImIn;
         List<TaskTarget> workToSend = new ArrayList<>();
         tryToGetOneOfEach(askedWork, tasksImIn, workToSend);
         tryToGetMaxWorkAsked(askedWork, tasksImIn, workToSend);
@@ -141,9 +142,7 @@ public class GPUPManager {
     // users dashboards
     public List<UserDto> getUsers() {
         List<UserDto> userDto = new ArrayList<>();
-        users.values().forEach(user -> {
-            userDto.add(new UserDto(user.username, user.role));
-        });
+        users.values().forEach(user -> userDto.add(new UserDto(user.username, user.role)));
         return userDto;
     }
 
@@ -181,6 +180,24 @@ public class GPUPManager {
 
     public List<InfoAboutTargetDTO> getInfoAboutAllTargets(String graphName) {
         return GPUPEngines.get(graphName).getInfoAboutAllTargets();
+    }
+
+    public void setNewStatuse(String taskStatus, String taskName) {
+        switch (taskStatus) {
+            case "ACTIVE":
+                if (tasks.get(taskName).getStatus().equals("NEW")) {
+                    tasks.get(taskName).activateTask();
+                } else {
+                    tasks.get(taskName).resumeTask();
+                }
+                break;
+            case "PAUSED":
+                tasks.get(taskName).pauseTask();
+                break;
+            case "CANCELED":
+                tasks.get(taskName).cancelledTask();
+                break;
+        }
     }
 
 

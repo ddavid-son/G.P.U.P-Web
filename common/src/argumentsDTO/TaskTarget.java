@@ -12,8 +12,8 @@ public class TaskTarget implements Serializable {
     public TargetState state;
     public final String name;
     public String workerName;
-    public final String taskName;
-    public final String userData;
+    public String taskName;
+    public String userData;
     public long enterWaiting = 0;
     public long enterProcess = 0;
     public List<String> dependsOn;

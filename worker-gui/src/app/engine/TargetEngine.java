@@ -6,7 +6,6 @@ import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
 import com.google.gson.reflect.TypeToken;
 import okhttp3.*;
-import okhttp3.internal.concurrent.TaskLoggerKt;
 import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
@@ -33,8 +32,6 @@ public class TargetEngine {
     private final List<TaskTarget> finishedWork = new ArrayList<>();
     private final List<accumulatorForWritingToFile> finishedLogs = new ArrayList<>();
 
-    //private final List<TaskTarget> finishedWorkHistory = new ArrayList<>();
-    //private final List<accumulatorForWritingToFile> finishedLogsHistory = new ArrayList<>();
 
     // ----------------------------------------- server call management ----------------------------------------------//
     // fetching schedule
@@ -132,14 +129,20 @@ public class TargetEngine {
         if (newIndex == lastPushedIndex)
             return null;
 
-        lastPushedIndex = newIndex;
-        return RequestBody.create(
-                HttpUtil.GSON.toJson(finishedLogs, new TypeToken<List<accumulatorForWritingToFile>>() {
+        RequestBody b = RequestBody.create(
+                HttpUtil.GSON.toJson(finishedLogs.subList(lastPushedIndex, newIndex - 1), new TypeToken<List<accumulatorForWritingToFile>>() {
                 }.getType())
                         + "~~~" +
-                        HttpUtil.GSON.toJson(finishedLogs, new TypeToken<List<TaskTarget>>() {
+                        HttpUtil.GSON.toJson(finishedWork.subList(lastPushedIndex, newIndex - 1), new TypeToken<List<TaskTarget>>() {
                         }.getType()),
                 MediaType.parse("application/json"));
+        lastPushedIndex = newIndex;
+        return b;
+    }
+
+    public synchronized <T> int getListCurrentIndex(List<T> list) {
+
+        return list.size();
     }
     // ----------------------------------------- server call management ----------------------------------------------//
 
@@ -177,15 +180,11 @@ public class TargetEngine {
     }
 
     public synchronized int getFreeThreads() {
-        return activeThreads;
+        return poolSize - activeThreads;
     }
-
-    public synchronized <T> int getListCurrentIndex(List<T> list) {
-
-        return list.size();
-    }
-
     // ------------------------------------------- engine management -------------------------------------------------//
+
+
     public void addTasksToQueue(List<TaskTarget> taskTargets, String s) {
         taskTargets.forEach(target -> {
             if ("COMPILATION".equals(s)) {
@@ -200,6 +199,7 @@ public class TargetEngine {
         this.finishedWork.add(target);
         this.finishedLogs.add(targetLogs);
         updateNumberOfActiveThreads(-1);
+        System.out.println(target.name + "in queue");
         if (timerForPushing == null) { //lazy
             timerForPushing = new Timer();
             schedulePushForFinishedTargets();
@@ -273,6 +273,8 @@ public class TargetEngine {
     private void performSimulation(TaskTarget target) {
         accumulatorForWritingToFile targetLogs = new accumulatorForWritingToFile();
         Thread t = new Thread(() -> {
+
+            System.out.println("working on " + target.name);
             simulateRun(target, targetLogs);
             updateStatusAccordingToResults(target);
             saveToResults(target, targetLogs);
@@ -282,6 +284,7 @@ public class TargetEngine {
     }
 
     private void simulateRun(TaskTarget target, accumulatorForWritingToFile targetLogs) {
+        System.out.println("entered simulation " + target.name);
         targetLogs.startTime = System.currentTimeMillis();
         Timestamp ts = new Timestamp(targetLogs.startTime);
         try {
@@ -305,6 +308,7 @@ public class TargetEngine {
 
         } catch (InterruptedException e) { /**/ }
         targetLogs.endTime = System.currentTimeMillis();
+        System.out.println("finished sim :" + target.name);
     }
 
     private void updateStatusAccordingToResults(TaskTarget target) {
@@ -316,5 +320,6 @@ public class TargetEngine {
         } else {
             target.state = TargetState.FAILURE;
         }
+        System.out.println("sim result is " + target.name + " finishd " + target.state);
     }
 }

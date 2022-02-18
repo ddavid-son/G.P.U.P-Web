@@ -27,6 +27,15 @@ public class SimulationTask extends Task implements Serializable {
         this.msToRun = simulationArgs.getSleepTime();
         this.successRate = simulationArgs.getSuccessRate();
         this.successfulWithWarningRate = simulationArgs.getWarningRate();
+
+        graph.values().forEach(target -> {
+            target.isRandom = simulationArgs.isRandom();
+            target.msToRun = simulationArgs.getSleepTime();
+            target.taskName = simulationArgs.getTaskName();
+            target.workerName = simulationArgs.getTaskOwner();
+            target.successRate = simulationArgs.getSuccessRate();
+            target.successfulWithWarningRate = simulationArgs.getWarningRate();
+        });
     }
 
 
@@ -45,30 +54,17 @@ public class SimulationTask extends Task implements Serializable {
     protected void finishWorkOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun) {
         resOfTargetTaskRun.outPutData.add(0, "1. task started, running on - " + targetToExecute.name);
         resOfTargetTaskRun.outPutData.add(1, " * task was ran by: " + targetToExecute.workerName);
-
-
         resOfTargetTaskRun.outPutData.add(2, "2. text on target - " +
                 (targetToExecute.userData.isEmpty() ? "no text" : targetToExecute.userData));
 
-        updateGraphAccordingToTheResults(targetToExecute, resOfTargetTaskRun);
+        updateAccordingToState(targetToExecute, resOfTargetTaskRun);
+
         resOfTargetTaskRun.targetState = targetToExecute.state;
         resOfTargetTaskRun.targetName = targetToExecute.name;
 
         invokeConsumer(targetToExecute, resOfTargetTaskRun);
-
         writeTargetResultsToLogFile(resOfTargetTaskRun);
         logData.add(resOfTargetTaskRun);
-    }
-
-    private void updateGraphAccordingToTheResults(TaskTarget targetToExecute,
-                                                  accumulatorForWritingToFile resOfTargetTaskRun) {
-        if (targetToExecute.state == TargetState.SUCCESS ||
-                targetToExecute.state == TargetState.WARNING) {
-            removeAndUpdateDependenciesAfterSuccess(targetToExecute, resOfTargetTaskRun);
-        } else {
-            notifyAllAncestorToBeSkipped(targetToExecute, resOfTargetTaskRun);
-            updateOpenTargets(targetToExecute, resOfTargetTaskRun);
-        }
     }
     // ---------------------------- includes internal logic specific to simulationTask -----------------------------  //
 }

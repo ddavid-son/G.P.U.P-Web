@@ -19,8 +19,11 @@ public class UpdateListsDTO {
                        Set<String> successSet, Set<String> inProcessSet, Set<String> waitingSet,
                        Set<String> failedSet) {
 
-        this.frozenSet.clear();
-        this.frozenSet.addAll(frozenSet);
+
+        this.frozenSet.retainAll(frozenSet);
+        if (this.frozenSet.isEmpty()) {
+            this.frozenSet.addAll(frozenSet);
+        }
 
         this.warningSet.addAll(warningSet);
         this.skippedSet.addAll(skippedSet);

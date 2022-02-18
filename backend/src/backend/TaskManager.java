@@ -15,7 +15,7 @@ import java.util.Set;
 
 public class TaskManager {
 
-    private Task task;
+    private final Task task;
     private String taskName;
     private String ownerName;
     private TaskArgs taskArgs;
@@ -25,7 +25,8 @@ public class TaskManager {
     private int compilationPrice = -1;
     private TaskStatus status = TaskStatus.NEW;
     private final GraphInfoDTO targetDistrbution;
-    private Set<String> registeredUsers = new HashSet<>();
+    private final Set<String> registeredUsers = new HashSet<>();
+
 
     public String getTaskName() {
         return taskName;
@@ -60,12 +61,11 @@ public class TaskManager {
         myInfo.setEnrolled(registeredUsers.contains(userName));
     }
 
-    public void getTargetsToExecute(String userName) {
-
-    }
-
     public void activateTask() {
-        //task.run(System.out::println);
+        setStatus(TaskStatus.ACTIVE);
+        if (status == TaskStatus.ACTIVE) {
+            task.activateRun();
+        }
     }
 
     public TaskTarget getTargetToExecute() {
@@ -80,20 +80,15 @@ public class TaskManager {
         if (status == TaskStatus.ACTIVE) {
             for (int i = 0; i < numberOfTaskToGet; i++) {
                 TaskTarget target = task.getWork();
-                if (target == null)
+                if (target == null) {
+                    if (task.allGraphHasBeenProcessed)
+                        setStatus(TaskStatus.CANCELED);
                     break;
+                }
                 l.add(target);
             }
         }
         return l;
-    }
-
-    public void addUser(String userName) {
-        registeredUsers.add(userName);
-    }
-
-    public void removeUser(String userName) {
-        registeredUsers.remove(userName);
     }
 
     public TaskManager(Task task) {
@@ -103,10 +98,12 @@ public class TaskManager {
     }
 
     public void setTaskArgs(TaskArgs taskArgs) {
+
         this.taskArgs = taskArgs;
     }
 
     public TaskArgs getTaskArgs() {
+
         return taskArgs;
     }
 
@@ -124,26 +121,36 @@ public class TaskManager {
             this.compilationPrice = compilationPrice;
     }
 
+    public void setStatus(TaskStatus taskStatus) {
+        if (status != TaskStatus.FINISHED && status != TaskStatus.CANCELED) {
+            status = taskStatus;
+        }
+    }
+
     public void pauseTask() {
-        if (task != null)
-            task.pauseTask();
+        setStatus(TaskStatus.PAUSED);
     }
 
     public void resumeTask() {
-        if (task != null)
-            task.resumeTask();
+        setStatus(TaskStatus.ACTIVE);
     }
 
+    public void cancelledTask() {
+        setStatus(TaskStatus.CANCELED);
+    }
 
     public void addWorker(String workerName) {
+
         registeredUsers.add(workerName);
     }
 
     public void removeWorker(String workerName) {
+
         registeredUsers.remove(workerName);
     }
 
     public UpdateListsDTO getUpdateListsDTO() {
+
         return task.getUpdateListsDTO();
     }
 

@@ -70,7 +70,6 @@ public class ClientLogin extends HttpServlet implements ServletContextListener {
                         userManager.addUser(usernameFromParameter);
                         request.getSession(true).setAttribute(Constants.USERNAME, usernameFromParameter);
                         response.setStatus(HttpServletResponse.SC_OK);
-                        response.addCookie(new Cookie("username", usernameFromParameter));
                         saveUserInEngine(request, usernameFromParameter, usernameRoleParameter);
                     }
                 }

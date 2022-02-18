@@ -411,6 +411,13 @@ public class DashBoardController {
 
     @NotNull
     private Request buildRequest(File selectedFile) {
+
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/loadXml")
+                .newBuilder()
+                .addQueryParameter("username", userName)
+                .build()
+                .toString();
+
         RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
                 .addFormDataPart(
                         "xml-file",
@@ -421,10 +428,7 @@ public class DashBoardController {
                 ).build();
 
         return new Request.Builder()
-                .url(HttpUrl.parse(Constants.FULL_SERVER_PATH + "/loadXml")
-                        .newBuilder()
-                        .build()
-                        .toString())
+                .url(finalUrl)
                 .method("POST", body)
                 .build();
     }

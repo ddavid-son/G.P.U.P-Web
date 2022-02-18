@@ -2,12 +2,7 @@ package backend;
 
 import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
-import backend.serialSets.SerialSetManger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.sql.Timestamp;
 import java.util.function.Consumer;
 
 public class CompilationTask extends Task {
@@ -23,6 +18,13 @@ public class CompilationTask extends Task {
         CompilationArgs compilationArgs = (CompilationArgs) taskArgs;
         this.srcFolderPath = compilationArgs.getSrcPath();
         this.dstFolderPath = compilationArgs.getDstPath();
+
+        graph.values().forEach(target -> {
+            target.workerName = compilationArgs.getTaskOwner();
+            target.taskName = taskArgs.getTaskName();
+            target.srcFolderPath = compilationArgs.getSrcPath();
+            target.dstFolderPath = compilationArgs.getDstPath();
+        });
     }
 
     @Override
@@ -36,12 +38,7 @@ public class CompilationTask extends Task {
     @Override
     protected void finishWorkOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun) {
 
-        if (targetToExecute.state == TargetState.SUCCESS)
-            removeAndUpdateDependenciesAfterSuccess(targetToExecute, resOfTargetTaskRun);
-        else {
-            notifyAllAncestorToBeSkipped(targetToExecute, resOfTargetTaskRun);
-            updateOpenTargets(targetToExecute, resOfTargetTaskRun);
-        }
+        updateAccordingToState(targetToExecute, resOfTargetTaskRun);
         updateAccumulator(resOfTargetTaskRun, targetToExecute);
 
         writeTargetResultsToLogFile(resOfTargetTaskRun);
