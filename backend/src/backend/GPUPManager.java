@@ -3,6 +3,8 @@ package backend;
 import argumentsDTO.CommonEnums.*;
 import argumentsDTO.CommonEnums.RelationType;
 import argumentsDTO.TaskArgs;
+import argumentsDTO.TaskTarget;
+import argumentsDTO.accumulatorForWritingToFile;
 import dataTransferObjects.*;
 
 import java.util.*;
@@ -58,6 +60,22 @@ public class GPUPManager {
         return new ArrayList<>(tasks.keySet());
     }
 
+    public int acceptResults(List<TaskTarget> targets, List<accumulatorForWritingToFile> targetLogs) {
+        int totalWorkPrice = 0;
+        while (!targets.isEmpty()) {
+            totalWorkPrice += sendDataToTask(targets.remove(0), targetLogs.remove(0));
+        }
+
+        return totalWorkPrice;
+    }
+
+    private int sendDataToTask(TaskTarget target, accumulatorForWritingToFile log) {
+        if (taskExists(target.taskName)) {
+            return tasks.get(target.taskName).finishWork(target, log);
+        }
+        return 0;
+    }
+
 
     // worker dashboard
     public TaskInfoDTO getTaskInfo(String taskName, String userName) {
@@ -71,7 +89,6 @@ public class GPUPManager {
         return tasks.containsKey(taskName);
     }
 
-
     public boolean taskInCompatibleState(String taskName, String joinOrLeave) {
         if (joinOrLeave.equals("join"))
             return tasks.get(taskName).getStatus().equals(TaskStatus.CANCELED) ||
@@ -81,10 +98,43 @@ public class GPUPManager {
 
     public void joinTask(String taskName, String workerName) {
         tasks.get(taskName).addWorker(workerName);
+        users.get(workerName).addTask(taskName);
     }
 
     public void leaveTask(String taskName, String workerName) {
         tasks.get(taskName).removeWorker(workerName);
+        users.get(workerName).removeTask(taskName);
+    }
+
+    public List<TaskTarget> getWorkForWorker(String workerName, int askedWork) {
+        List<String> tasksImIn = users.get(workerName).tasksImIn;
+        List<TaskTarget> workToSend = new ArrayList<>();
+        tryToGetOneOfEach(askedWork, tasksImIn, workToSend);
+        tryToGetMaxWorkAsked(askedWork, tasksImIn, workToSend);
+
+        return workToSend;
+    }
+
+    private void tryToGetMaxWorkAsked(int askedWork, List<String> tasksImIn, List<TaskTarget> workToSend) {
+        for (String taskName : tasksImIn) {
+            if (workToSend.size() == askedWork)
+                break;
+            workToSend.addAll(
+                    tasks.get(taskName).getTargetToExecute(
+                            askedWork - workToSend.size()
+                    )
+            );
+        }
+    }
+
+    private void tryToGetOneOfEach(int askedWork, List<String> tasksImIn, List<TaskTarget> workToSend) {
+        for (String taskName : tasksImIn) {
+            if (workToSend.size() == askedWork)
+                break;
+            TaskTarget t = tasks.get(taskName).getTargetToExecute();
+            if (t != null)
+                workToSend.add(t);
+        }
     }
 
 
@@ -111,9 +161,14 @@ public class GPUPManager {
         return username2User.containsKey(username);
     }
 
+    public boolean userExists(String username, String role) {
+        return userExists(username) && username2User.get(username).role.equals(role);
+    }
+
     public boolean userInRole(String username, String role) {
         return userExists(username) && username2User.get(username).role.equals(role);
     }
+
 
     // admin dashboard
     public List<String> getLoadedGraphs() {

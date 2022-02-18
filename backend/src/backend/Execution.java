@@ -187,8 +187,6 @@ public class Execution implements Engine, Serializable {
         taskManager.setManagerData(taskArgs.getOriginalGraph(), taskArgs.getTaskName(), taskArgs.getTaskOwner());
 
         return taskManager;
-        //todo: need to remove this sout after testing
-        //task.run(System.out::println);
     }
 
     @Override
@@ -207,13 +205,14 @@ public class Execution implements Engine, Serializable {
         switch (taskArgs.getTaskType()) {
             case SIMULATION:
                 task = new SimulationTask(taskArgs, costumeGraphManager,
-                        costumeGraphManager.getSerialSetManager(), finishedTargetLog, finishedTarget);
+                        finishedTargetLog, finishedTarget);
                 break;
             case COMPILATION:
                 task = new CompilationTask(taskArgs, costumeGraphManager,
-                        costumeGraphManager.getSerialSetManager(), finishedTargetLog, finishedTarget);
+                        finishedTargetLog, finishedTarget);
                 break;
         }
+        task.taskName = taskArgs.getTaskName();
     }
 
     public void setNumberOfThreads(Integer value) {

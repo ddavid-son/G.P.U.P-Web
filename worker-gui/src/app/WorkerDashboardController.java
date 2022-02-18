@@ -1,6 +1,7 @@
 package app;
 
 import app.Utils.HttpUtil;
+import app.engine.TargetEngine;
 import com.google.gson.reflect.TypeToken;
 import dataTransferObjects.TaskInfoDTO;
 import dataTransferObjects.UserDto;
@@ -98,17 +99,18 @@ public class WorkerDashboardController {
     private Button joinTaskBtn;
 
 
-    @FXML
-    private TableColumn<TaskInfoDTO, Rectangle> TaskEnrolledCol;
+    //@FXML
+    //private TableColumn<TaskInfoDTO, Rectangle> TaskEnrolledCol;
     //private TableColumn<TaskInfoDTO, String> TaskEnrolledCol;
 
-    private Stage primaryStage;
-    private final Timer timer = new Timer();
-    private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
-    private final List<String> tasksImIn = new ArrayList<>();
-    private String workerName;
-    private int numberOfThreads;
     private int cash = 0;
+    private String workerName;
+    private Stage primaryStage;
+    private int numberOfThreads;
+    private TargetEngine engine;
+    private final Timer timer = new Timer();
+    private final List<String> tasksImIn = new ArrayList<>();
+    private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
 
 
     @FXML
@@ -123,9 +125,9 @@ public class WorkerDashboardController {
         this.workerName = username;
         this.primaryStage = primaryStage;
         this.numberOfThreads = numberOfThreads;
-        //walletLabel.setText("Wallet: " + cash);
-        walletLabel.textProperty().bind(new SimpleStringProperty("Wallet: " + cash));
         loggedInAs.setText("Hello " + username + "!");
+        engine = new TargetEngine(numberOfThreads, workerName);
+        walletLabel.textProperty().bind(new SimpleStringProperty("Wallet: " + cash));
 
         scheduleTasksFetching();
         taskHeaderTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -245,6 +247,7 @@ public class WorkerDashboardController {
                 String responseBody = response.body().string();
                 if (response.isSuccessful()) {
                     Platform.runLater(() -> resLogLabel.setText("Successfully " + (joinOrLeave ? "joined" : "left") + " task " + taskName));
+                    updateWorkFetching(joinOrLeave, taskName);
                 } else {
                     handleErrors(null,
                             responseBody,
@@ -253,6 +256,18 @@ public class WorkerDashboardController {
                 }
             }
         });
+    }
+
+    private void updateWorkFetching(boolean joinOrLeave, String taskName) {
+        if (joinOrLeave) {
+            engine.addTask(taskName);
+        } else {
+            engine.removeTask(taskName);
+        }
+    }
+
+    private void scheduleTargetsFetching() {
+
     }
 
     private boolean assertTaskCredentials(String taskName, boolean joinOrLeave) {

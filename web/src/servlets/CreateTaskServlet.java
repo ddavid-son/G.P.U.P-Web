@@ -7,6 +7,7 @@ import backend.Task;
 import backend.TaskManager;
 import com.google.gson.reflect.TypeToken;
 import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +25,8 @@ public class CreateTaskServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
+        // get cookie
+        Cookie[] cookie = request.getCookies();
         String taskType = request.getParameter("task-type");
         String taskArgsJson = request.getReader().lines().collect(Collectors.joining());
         Type type;

@@ -1,10 +1,7 @@
 package backend;
 
+import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
-import argumentsDTO.ProgressDto;
-import argumentsDTO.TaskArgs;
-import argumentsDTO.TimeUtil;
-import argumentsDTO.accumulatorForWritingToFile;
 import backend.serialSets.SerialSetManger;
 import dataTransferObjects.UpdateListsDTO;
 import javafx.application.Platform;
@@ -19,16 +16,17 @@ import java.util.stream.Collectors;
 public abstract class Task implements Serializable {
 
     int outOfWaiting = 0;
+    long startTime;
+    String taskName;
+    String serverFullPath;
     int numberOfFinishedTargets = 0;
     boolean allGraphHasBeenProcessed;
     Consumer<ProgressDto> finishedTarget;
     List<String> waitingList = new LinkedList<>();
     Map<String, TaskTarget> graph = new HashMap<>();
     Consumer<accumulatorForWritingToFile> finishedTargetLog;
-    private final String WORKING_DIR = "c:\\gpup-working-dir";
+    final String WORKING_DIR = "c:\\gpup-working-dir";
     List<accumulatorForWritingToFile> logData = new LinkedList<>();
-    private String serverFullPath;
-    private long startTime;
 
     public Set<String> frozenSet = new HashSet<>();
     public Set<String> warningSet = new HashSet<>();
@@ -75,11 +73,9 @@ public abstract class Task implements Serializable {
     }
 
     // ---------------------------------------------- ctor and utils ------------------------------------------------ //
-    public Task(boolean allGraphHasBeenProcessed, SerialSetManger serialSetManger,
-                int numberOfThreads, GraphManager graphManager,
+    public Task(boolean allGraphHasBeenProcessed, int numberOfThreads, GraphManager graphManager,
                 Consumer<accumulatorForWritingToFile> finishedTargetLog, Consumer<ProgressDto> finishedTarget) {
         this.numberOfThreads = numberOfThreads;
-        //this.serialSetManger = serialSetManger;
         this.allGraphHasBeenProcessed = allGraphHasBeenProcessed;
         setConsumers(finishedTargetLog, finishedTarget);
         buildTaskGraph(graphManager);
@@ -87,8 +83,13 @@ public abstract class Task implements Serializable {
 
     protected void buildTaskGraph(GraphManager graphManager) {
         for (Target target : graphManager.getTargetArray()) {
-            TaskTarget taskTarget = new TaskTarget(target);
+
+            TaskTarget taskTarget = new TaskTarget(target.getName(), target.getType(), target.getUserData(), taskName);
+            taskTarget.setDependsOn(target.getDependsOnNames());
+            taskTarget.setRequiredFor(target.getRequiredForNames());
+
             if (target.getState() == TargetState.WAITING) {
+                waitingList.add(target.getName());
                 waitingSet.add(target.getName());
             } else {
                 frozenSet.add(target.getName());
@@ -106,14 +107,6 @@ public abstract class Task implements Serializable {
 
         return allGraphHasBeenProcessed;
     }
-
-
-/*    public void changeNumberOfThreads(int newThreadsCount) {
-        if (newThreadsCount != numberOfThreads && newThreadsCount > 0 && newThreadsCount <= maxParallelism) {
-            numberOfThreads = newThreadsCount;
-            setPoolSize();
-        }
-    }*/
     // ---------------------------------------------- ctor and utils ------------------------------------------------ //
 
 
@@ -128,12 +121,21 @@ public abstract class Task implements Serializable {
     }
 
     public TaskTarget getWork() {
+        if (waitingList.size() == 0)
+            return null;
         TaskTarget targetToExecute = graph.get(waitingList.remove(0));
         targetToExecute.state = TargetState.IN_PROCESS;
         targetToExecute.enterProcess = System.currentTimeMillis();
+
         waitingSet.remove(targetToExecute.name);
         inProcessSet.add(targetToExecute.name);// consider saving to which worker it was assigned
         return targetToExecute;
+    }
+
+    public void giveResults(TaskTarget targetToExecute) {
+        // switch on result
+
+        //
     }
 
     public long getWaitingStartTime(String targetName) {
@@ -169,15 +171,15 @@ public abstract class Task implements Serializable {
         //simulationRunSummary(print);
     }
 
-    private void sendToNewThreadAndPushToPool(String fullPath, TaskTarget targetToExecute, accumulatorForWritingToFile finalResOfTargetTaskRun) {
+    private void sendToNewThreadAndPushToPool(/*String fullPath, */TaskTarget targetToExecute, accumulatorForWritingToFile finalResOfTargetTaskRun) {
         Thread t = new Thread(() -> {
-            pauseThreadTask();
-            updateNumberOfActiveThreads(true);
-            runTaskOnTarget(targetToExecute, finalResOfTargetTaskRun);
-            writeTargetResultsToLogFile(finalResOfTargetTaskRun, fullPath);
+            //pauseThreadTask();
+            //updateNumberOfActiveThreads(true);
+            //runTaskOnTarget(targetToExecute, finalResOfTargetTaskRun);
+            writeTargetResultsToLogFile(finalResOfTargetTaskRun /*,fullPath*/);
             logData.add(finalResOfTargetTaskRun);
             incrementFinishedThreadsCount();
-            updateNumberOfActiveThreads(false);
+            //updateNumberOfActiveThreads(false);
         }, "thread #: " + numberOfFinishedTargets);
         threadPool.execute(t);
     }
@@ -215,7 +217,7 @@ public abstract class Task implements Serializable {
             if (res.targetState == TargetState.SUCCESS) success++;
         }
         //count all targets that didn't participated in the simulation i.e . they were skipped
-        for (TaskTarget target : graph.values())
+        for (TaskTarget target : graph.values()) // can be a simple subtraction operation... why I did it this way ?
             if (target.state == TargetState.SKIPPED) skipped++;
 
         if (skipped == 0 && Failed == 0)
@@ -245,7 +247,7 @@ public abstract class Task implements Serializable {
     protected String createDirectoryToLogData(long graphRunStartTime) {
         Date d = new Date(graphRunStartTime);
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
-        File logFile = new File(WORKING_DIR + "\\" + "simulation - " + sdf.format(d));
+        File logFile = new File(WORKING_DIR + "\\" + (this instanceof SimulationTask ? "simulation - " : "compilation - ") + sdf.format(d));
         if (!logFile.exists()) {
             try {
                 if (!logFile.mkdirs()) throw new IOException("Could not create directory");
@@ -257,8 +259,9 @@ public abstract class Task implements Serializable {
         return logFile.getAbsolutePath();
     }
 
-    protected void writeTargetResultsToLogFile(accumulatorForWritingToFile resOfTargetTaskRun, String fullPath) {
-        File logFile = new File(fullPath + "\\" + resOfTargetTaskRun.targetName + ".log");
+    protected void writeTargetResultsToLogFile(accumulatorForWritingToFile resOfTargetTaskRun/*, String fullPath*/) {
+        //File logFile = new File(fullPath + "\\" + resOfTargetTaskRun.targetName + ".log");
+        File logFile = new File(serverFullPath + ".log");
 
         try {
             if (!logFile.exists()) {
@@ -377,72 +380,8 @@ public abstract class Task implements Serializable {
     // ----------------------------------------- abstract Methods --------------------------------------------------- //
     abstract void updateMembersAccordingToTask(TaskArgs taskArgs);
 
-    abstract void runTaskOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun);
+    abstract void finishWorkOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun);
 
     // ----------------------------------------- abstract Methods --------------------------------------------------- //
 
-
-    public class TaskTarget implements Serializable {
-
-        protected final String name;
-        protected final String userData;
-        protected TargetType type;
-        protected TargetState state;
-        protected List<String> dependsOn;
-        protected List<String> requiredFor;
-        protected final List<String> nameOfFailedOrSkippedDependencies = new ArrayList<>();
-        protected final List<String> serialSetsName = new ArrayList<>();
-        protected long enterWaiting = 0;
-        protected long enterProcess = 0;
-
-        //ctor
-        public TaskTarget(Target target) {
-            this.name = target.getName();
-            this.type = target.getType();
-            this.userData = target.getUserData();
-            if (type == TargetType.INDEPENDENT || type == TargetType.LEAF) {
-                state = TargetState.WAITING;
-                waitingList.add(name);
-                enterWaiting = System.currentTimeMillis();
-            } else {
-                this.state = TargetState.FROZEN;
-            }
-
-            this.dependsOn = target.getDependsOnNames();
-            this.requiredFor = target.getRequiredForNames();
-            this.serialSetsName.addAll(target.getSerialSetsName());
-        }
-
-        public String getName() {
-            return this.name;
-        }
-
-        public String getUserData() {
-            return this.userData;
-        }
-
-        public TargetType getType() {
-            return this.type;
-        }
-
-        public TargetState getState() {
-            return this.state;
-        }
-
-        public List<String> getDependsOnNames() {
-            return this.dependsOn;
-        }
-
-        public List<String> getRequiredForNames() {
-            return this.requiredFor;
-        }
-
-        public List<String> getNameOfFailedOrSkippedDependencies() {
-            return this.nameOfFailedOrSkippedDependencies;
-        }
-
-        public List<String> getSerialSetsName() {
-            return this.serialSetsName;
-        }
-    }
 }

@@ -2,12 +2,15 @@ package backend;
 
 import argumentsDTO.CommonEnums.*;
 import argumentsDTO.TaskArgs;
+import argumentsDTO.TaskTarget;
+import argumentsDTO.accumulatorForWritingToFile;
 import dataTransferObjects.GraphInfoDTO;
 import dataTransferObjects.TaskInfoDTO;
 import dataTransferObjects.UpdateListsDTO;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class TaskManager {
@@ -63,6 +66,26 @@ public class TaskManager {
 
     public void activateTask() {
         //task.run(System.out::println);
+    }
+
+    public TaskTarget getTargetToExecute() {
+        if (status == TaskStatus.ACTIVE)
+            return task.getWork();
+        return null;
+    }
+
+    public List<TaskTarget> getTargetToExecute(int numberOfTaskToGet) {
+        List<TaskTarget> l = new ArrayList<>();
+
+        if (status == TaskStatus.ACTIVE) {
+            for (int i = 0; i < numberOfTaskToGet; i++) {
+                TaskTarget target = task.getWork();
+                if (target == null)
+                    break;
+                l.add(target);
+            }
+        }
+        return l;
     }
 
     public void addUser(String userName) {
@@ -122,5 +145,10 @@ public class TaskManager {
 
     public UpdateListsDTO getUpdateListsDTO() {
         return task.getUpdateListsDTO();
+    }
+
+    public int finishWork(TaskTarget target, accumulatorForWritingToFile log) {
+        task.finishWorkOnTarget(target, log);
+        return simulationPrice == -1 ? compilationPrice : simulationPrice;
     }
 }

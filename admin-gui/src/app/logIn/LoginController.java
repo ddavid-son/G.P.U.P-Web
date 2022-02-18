@@ -1,6 +1,7 @@
 package app.logIn;
 
 import app.dashboard.DashBoardController;
+import app.util.FXUtils;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -42,7 +43,10 @@ public class LoginController {
     private void loginButtonClicked(ActionEvent event) {
 
         String userName = userNameTextField.getText();
-        userName = userName.replaceAll("[^a-zA-Z0-9]", ""); // tell user you filtered his name
+        if (userNameTextField.getText().matches(".[0-9]$")) { // todo: need to be tested
+            FXUtils.handleErrors(null, "Please enter name that doesnt end with a digit", "Invalid task name!");
+            return;
+        }
 
         if (userName.isEmpty()) {
             errorMessageProperty.set("User name is empty. You can't login with empty user name");
