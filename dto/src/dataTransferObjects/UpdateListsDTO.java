@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UpdateListsDTO {
+    public long startTime;
+    public long endTime;
     public Set<String> frozenSet = new HashSet<>();
     public Set<String> warningSet = new HashSet<>();
     public Set<String> skippedSet = new HashSet<>();
@@ -14,6 +15,7 @@ public class UpdateListsDTO {
     public Set<String> inProcessSet = new HashSet<>();
     public Set<String> waitingSet = new HashSet<>();
     public Set<String> failedSet = new HashSet<>();
+    public int registeredUsers;
 
     public void setAll(Set<String> frozenSet, Set<String> warningSet, Set<String> skippedSet,
                        Set<String> successSet, Set<String> inProcessSet, Set<String> waitingSet,
@@ -35,6 +37,30 @@ public class UpdateListsDTO {
 
         this.waitingSet.clear();
         this.waitingSet.addAll(waitingSet);
+    }
+
+    public boolean taskEnded() {
+        return frozenSet.isEmpty() && inProcessSet.isEmpty() && waitingSet.isEmpty();
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public long getDuration() {
+        return endTime - startTime;
+    }
+
+    public int getRegisteredUsers() {
+        return registeredUsers;
+    }
+
+    public void setRegisteredUsers(int registeredUsers) {
+        this.registeredUsers = registeredUsers;
     }
 
     public List<String> getFrozenAsList() {

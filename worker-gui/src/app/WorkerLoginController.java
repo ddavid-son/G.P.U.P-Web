@@ -46,10 +46,10 @@ public class WorkerLoginController {
 
         int threads = threadsSpinner.getValue();
         String userName = userNameTF.getText().trim();
-        if (userName.matches(".[0-9]$")) { // todo: need to be tested
-            FXUtil.handleErrors(null, "Please enter name that doesnt end with a digit", "Invalid task name!");
+/*        if (userName.matches(".*\\d")) { // todo: need to be tested
+            FXUtil.handleErrors(null, "Please enter name that doesnt end with a digit", "Invalid user name!");
             return;
-        }
+        }*/
 
         if (!assertParameters(threads, userName)) {
             FXUtil.handleErrors(null,

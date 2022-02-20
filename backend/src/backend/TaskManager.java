@@ -1,9 +1,7 @@
 package backend;
 
+import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
-import argumentsDTO.TaskArgs;
-import argumentsDTO.TaskTarget;
-import argumentsDTO.accumulatorForWritingToFile;
 import dataTransferObjects.GraphInfoDTO;
 import dataTransferObjects.TaskInfoDTO;
 import dataTransferObjects.UpdateListsDTO;
@@ -68,10 +66,11 @@ public class TaskManager {
         }
     }
 
-    public TaskTarget getTargetToExecute() {
-        if (status == TaskStatus.ACTIVE)
-            return task.getWork();
-        return null;
+    public List<TaskTarget> getTargetToExecute() {
+        return getTargetToExecute(1);
+    /*    if (status == TaskStatus.ACTIVE)
+            return ask.getWork();
+        return null;*/
     }
 
     public List<TaskTarget> getTargetToExecute(int numberOfTaskToGet) {
@@ -82,7 +81,7 @@ public class TaskManager {
                 TaskTarget target = task.getWork();
                 if (target == null) {
                     if (task.allGraphHasBeenProcessed)
-                        setStatus(TaskStatus.CANCELED);
+                        setStatus(TaskStatus.FINISHED);
                     break;
                 }
                 l.add(target);
@@ -127,6 +126,17 @@ public class TaskManager {
         }
     }
 
+    public TaskArgs getTaskArgsForNewTask(boolean isIncremental) {
+        TaskArgs newTaskArgs = taskArgs.cloneArgs();
+        if (!status.equals(TaskStatus.FINISHED))
+            return null;
+        if (isIncremental) {
+            newTaskArgs.getTargetsSelectedForGraph().clear();
+            newTaskArgs.getTargetsSelectedForGraph().addAll(task.getFailedAndSkippedList());
+        }
+        return newTaskArgs;
+    }
+
     public void pauseTask() {
         setStatus(TaskStatus.PAUSED);
     }
@@ -151,7 +161,11 @@ public class TaskManager {
 
     public UpdateListsDTO getUpdateListsDTO() {
 
-        return task.getUpdateListsDTO();
+        return task.getUpdateListsDTO(registeredUsers.size());
+    }
+
+    public List<String> getTargetClickedInfo(String targetName, TargetState targetState) {
+        return task.getInfoAboutTargetInExecution(targetName, targetState);
     }
 
     public int finishWork(TaskTarget target, accumulatorForWritingToFile log) {

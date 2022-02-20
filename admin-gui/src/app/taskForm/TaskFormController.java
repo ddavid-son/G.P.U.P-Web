@@ -24,21 +24,16 @@ public class TaskFormController {
     private File dstFolder;
     private File srcFolder;
     public Button newRunBtnComp;
-    public Slider threadSliderComp;
     private Label dstFolderNameLabel;
     private Label srcFolderNameLabel;
     public RadioButton whatIfOffRBComp;
     public RadioButton whatIfUpOnRBComp;
-    public Button incrementalRunBtnComp;
     public Button sourceFolderUploadBnt;
     public Button OutputFolderUploadBnt;
     public RadioButton whatIfDownOnRBComp;
     public GridPane compilationTabGridPane;
     @FXML
     private TextField compilationTaskNameTF;
-
-    @FXML
-    private IntField threadNumberForCompilationField;
     // ----------------------------------------------- Compilation Components ---------------------------------------- //
 
 
@@ -65,9 +60,6 @@ public class TaskFormController {
     private Button newRunBtn;
 
     @FXML
-    private Button incrementalRunBtn;
-
-    @FXML
     private final IntField successField = new IntField(1, 100, 50);
 
     @FXML
@@ -75,12 +67,6 @@ public class TaskFormController {
 
     @FXML
     private final IntField sleepTimeField = new IntField(1, 20000, 1000);
-
-    @FXML
-    private Slider threadSlider;
-
-    @FXML
-    private IntField threadCountField;
 
     @FXML
     private Slider sleepTimeSlider;
@@ -127,11 +113,6 @@ public class TaskFormController {
     public boolean getWhatIfDownIsSelected() {
         return whatIfDownOnRB.isSelected();
     }
-
-    public boolean getWhatIfUpIsSelected() {
-        return whatIfUpOnRB.isSelected();
-    }
-
     // -------------------------------------------- what if methods -------------------------------------------------- /
 
 
@@ -154,19 +135,15 @@ public class TaskFormController {
         whatIfOffRBComp.setSelected(false);
     }
 
-    public void onIncrementalRunBtnCompClicked(ActionEvent actionEvent) {
-        appController.resetListOnTaskView(true);
-        runCompilationTask(true);
-    }
-
     public void onNewRunBtnCompClicked(ActionEvent actionEvent) {
-        sideMenuController.setNewFileForTask();
-        runCompilationTask(false);
+        //sideMenuController.setNewFileForTask();
+        runCompilationTask();
     }
 
-    private void runCompilationTask(boolean isIncremental) {
+    private void runCompilationTask() {
         if (!(!compilationTaskNameTF.getText().isEmpty() && srcFolder != null &&
-                dstFolder != null && srcFolder.exists() && dstFolder.exists())) {
+                dstFolder != null && srcFolder.exists() && dstFolder.exists()) &&
+                !simulationTaskNameTF.getText().trim().matches(".*\\d")) {
             handleErrors(
                     null,
                     "Source and destination folders must be set before running a compilation task.",
@@ -178,8 +155,6 @@ public class TaskFormController {
 
         CompilationArgs compilationArgs = new CompilationArgs(
                 !whatIfOffRB.isSelected(),
-                threadNumberForCompilationField.getValue(),
-                isIncremental,
                 getWhatIfDownIsSelected() ?
                         RelationType.DEPENDS_ON :
                         RelationType.REQUIRED_FOR,
@@ -189,7 +164,7 @@ public class TaskFormController {
 
         updateTaskData(compilationArgs);
         appController.runTask(compilationArgs);
-        if (sideMenuController.taskType == null || !isIncremental) {
+        if (sideMenuController.taskType == null) {
             sideMenuController.taskType = TaskType.COMPILATION;
         }
     }
@@ -240,16 +215,8 @@ public class TaskFormController {
     // --------------------------------------------- Simulation Methods ----------------------------------------------//
     @FXML
     private void OnNewRunBtnClicked(ActionEvent event) {
-        if (!incrementalRunBtn.isDisable())
-            appController.resetListOnTaskView(false);
-        sideMenuController.setNewFileForTask();
-        runSimulationTask(false);
-    }
-
-    @FXML
-    private void OnIncrementalRunBtnClicked(ActionEvent event) {
-        appController.resetListOnTaskView(true);
-        runSimulationTask(true);
+        //sideMenuController.setNewFileForTask();
+        runSimulationTask();
     }
 
     @FXML
@@ -264,11 +231,12 @@ public class TaskFormController {
         yesRandomRB.setSelected(true);
     }
 
-    private void runSimulationTask(boolean isIncremental) {
+    private void runSimulationTask() {
         if (assertSimulationUserInput()) {
             handleErrors(
                     null,
-                    "Please fill all the fields - dont leave any field empty",
+                    "Please fill all the fields - dont leave any field empty \n" +
+                            "make sure the task name doesnt end with a number",
                     "Error in arguments that was inserted"
             );
             return;
@@ -279,10 +247,8 @@ public class TaskFormController {
                 ((double) successField.getValue()) / 100,
                 ((double) warningField.getValue()) / 100,
                 sleepTimeField.getValue(),
-                threadCountField.getValue(),
                 yesRandomRB.isSelected(),
                 !whatIfOffRB.isSelected(),
-                isIncremental,
                 getWhatIfDownIsSelected() ?
                         RelationType.DEPENDS_ON :
                         RelationType.REQUIRED_FOR
@@ -290,15 +256,15 @@ public class TaskFormController {
         updateTaskData(simulationArgs);
 
         appController.runTask(simulationArgs);
-        if (sideMenuController.taskType == null || !simulationArgs.isIncremental())
+        if (sideMenuController.taskType == null)
             sideMenuController.taskType = TaskType.SIMULATION;
     }
 
     private void updateTaskData(TaskArgs taskArgs) {
         taskArgs.setTaskName(
                 taskArgs.getTaskType().equals(TaskType.SIMULATION) ?
-                        simulationTaskNameTF.getText() :
-                        compilationTaskNameTF.getText()
+                        simulationTaskNameTF.getText().trim() :
+                        compilationTaskNameTF.getText().trim()
         );
         taskArgs.setTaskOwner(appController.getUsername());
         taskArgs.setOriginalGraph(appController.getEngineName());
@@ -308,65 +274,43 @@ public class TaskFormController {
         return !(successField.getValue() > 0 &&
                 warningField.getValue() > 0 &&
                 sleepTimeField.getValue() > 0 &&
-                threadCountField.getValue() > 0 &&
-                !simulationTaskNameTF.getText().isEmpty());
+                !simulationTaskNameTF.getText().isEmpty() &&
+                !simulationTaskNameTF.getText().trim().matches(".*\\d"));
     }
     // --------------------------------------------- Simulation Methods ----------------------------------------------//
 
-    public void setTaskController(int maxThreadCount, boolean incrementalAvailable, boolean filesAreTheSame) {
-        simulationTabSetUp(maxThreadCount, incrementalAvailable, filesAreTheSame);
-        compilationTabSetUp(maxThreadCount, incrementalAvailable, filesAreTheSame);
+    public void setTaskController() {
+        simulationTabSetUp();
+        compilationTabSetUp();
     }
 
-    private void compilationTabSetUp(int maxThreadCount, boolean incrementalAvailable, boolean filesAreTheSame) {
-        this.threadNumberForCompilationField = new IntField(1, maxThreadCount, 1);
-        this.threadSliderComp.setMax(maxThreadCount);
-        compilationTabGridPane.add(threadNumberForCompilationField, 4, 3);
-        GridPane.setValignment(threadNumberForCompilationField, VPos.CENTER);
-        threadSliderComp.valueProperty().bindBidirectional(threadNumberForCompilationField.valueProperty());
+    private void compilationTabSetUp() {
         whatIfOffRBComp.setSelected(true);
         whatIfDownOnRBComp.setSelected(false);
         whatIfUpOnRBComp.setSelected(false);
-        incrementalRunBtnComp.setDisable(
-                !incrementalAvailable || !filesAreTheSame ||
-                        !appController.currentSelectedTargetsAreTheSameAsPreviousRun() ||
-                        TaskType.SIMULATION == sideMenuController.taskType
 
-        );
         sourceFolderUploadBnt.setGraphic(appController.getIcon("/UploadIcon.png"));
         OutputFolderUploadBnt.setGraphic(appController.getIcon("/UploadIcon.png"));
     }
 
-    private void simulationTabSetUp(int maxThreadCount, boolean incrementalAvailable, boolean filesAreTheSame) {
-        threadCountField = new IntField(1, maxThreadCount, 1);
-        threadSlider.setMax(maxThreadCount);
+    private void simulationTabSetUp() {
         sleepTimeSlider.setMax(20_000);
         simulationTabGridPane.add(successField, 4, 1);
         simulationTabGridPane.add(warningField, 4, 1);
         simulationTabGridPane.add(sleepTimeField, 4, 2);
-        simulationTabGridPane.add(threadCountField, 4, 3);
 
         GridPane.setValignment(successField, VPos.TOP);
         GridPane.setValignment(warningField, VPos.BOTTOM);
-        GridPane.setValignment(threadCountField, VPos.TOP);
 
         successSlider.valueProperty().bindBidirectional(successField.valueProperty());
         warningSlider.valueProperty().bindBidirectional(warningField.valueProperty());
         sleepTimeSlider.valueProperty().bindBidirectional(sleepTimeField.valueProperty());
-        threadCountField.valueProperty().bindBidirectional(threadSlider.valueProperty());
 
         yesRandomRB.setSelected(true);
         noRandomRB.setSelected(false);
         whatIfOffRB.setSelected(true);
         whatIfUpOnRB.setSelected(false);
         whatIfDownOnRB.setSelected(false);
-
-        incrementalRunBtn.setDisable(
-                !incrementalAvailable || !filesAreTheSame ||
-                        !appController.currentSelectedTargetsAreTheSameAsPreviousRun() ||
-                        TaskType.COMPILATION == sideMenuController.taskType
-
-        );
     }
 
     public void setAppController(ControlPanelController appController, SideMenuController sideMenuController) {

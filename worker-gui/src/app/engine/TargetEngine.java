@@ -2,12 +2,15 @@ package app.engine;
 
 import app.Utils.FXUtil;
 import app.Utils.HttpUtil;
+import app.WorkerDashboardController;
 import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
 import com.google.gson.reflect.TypeToken;
+import com.sun.java.swing.plaf.windows.WindowsBorders;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import resources.Constants;
+import sun.security.krb5.SCDynamicStoreConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,22 +18,27 @@ import java.io.InputStreamReader;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.StreamSupport;
 
 public class TargetEngine {
 
     private final int poolSize;
     private boolean pauseFetching;
     private int activeThreads = 0;
+    private Timer timerForPushing;
+    private Timer timerForFetching;
     private final String workerName;
     private final ThreadPoolExecutor pool;
-    private Timer timerForFetching;
-    private Timer timerForPushing;
     private final Random random = new Random();
 
     private int lastPushedIndex = 0;
+    private final WorkerDashboardController controller;
     private final List<String> tasksImIn = new ArrayList<>();
     private final List<TaskTarget> finishedWork = new ArrayList<>();
     private final List<accumulatorForWritingToFile> finishedLogs = new ArrayList<>();
+
+    String logs;
+    String targets;
 
 
     // ----------------------------------------- server call management ----------------------------------------------//
@@ -66,7 +74,7 @@ public class TargetEngine {
                         List<TaskTarget> work = HttpUtil.GSON.fromJson(res, new TypeToken<List<TaskTarget>>() {
                         }.getType());
                         updateNumberOfActiveThreads(work.size());
-                        addTasksToQueue(work, "SIMULATION");
+                        addTasksToQueue(work);
                     } else {
                         FXUtil.handleErrors(null, res, "Error! couldn't fetch work from server");
                     }
@@ -87,8 +95,7 @@ public class TargetEngine {
     }
 
     private void pushResultsToServer() {
-        if (!finishedLogs.isEmpty() && !finishedWork.isEmpty()) {
-
+        if (finishedWork.size() == finishedLogs.size() && !finishedLogs.isEmpty()) {
             String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/finished-work")
                     .newBuilder()
                     .addQueryParameter("username", workerName)
@@ -115,7 +122,7 @@ public class TargetEngine {
                 public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                     String res = response.body().string();
                     if (response.isSuccessful()) {
-                        System.out.println(res);
+                        controller.updateWallet(Integer.parseInt(res));
                     } else {
                         FXUtil.handleErrors(null, res, "Error! couldn't send results to server");
                     }
@@ -129,13 +136,16 @@ public class TargetEngine {
         if (newIndex == lastPushedIndex)
             return null;
 
-        RequestBody b = RequestBody.create(
-                HttpUtil.GSON.toJson(finishedLogs.subList(lastPushedIndex, newIndex - 1), new TypeToken<List<accumulatorForWritingToFile>>() {
-                }.getType())
-                        + "~~~" +
-                        HttpUtil.GSON.toJson(finishedWork.subList(lastPushedIndex, newIndex - 1), new TypeToken<List<TaskTarget>>() {
-                        }.getType()),
-                MediaType.parse("application/json"));
+        synchronized (this) {
+            logs = HttpUtil.GSON.toJson(finishedLogs.subList(lastPushedIndex, newIndex),
+                    new TypeToken<List<accumulatorForWritingToFile>>() {
+                    }.getType());
+            targets = HttpUtil.GSON.toJson(finishedWork.subList(lastPushedIndex, newIndex),
+                    new TypeToken<List<TaskTarget>>() {
+                    }.getType());
+        }
+
+        RequestBody b = RequestBody.create(logs + "~~~" + targets, MediaType.parse("application/json"));
         lastPushedIndex = newIndex;
         return b;
     }
@@ -148,8 +158,8 @@ public class TargetEngine {
 
 
     // ------------------------------------------- engine management -------------------------------------------------//
-    public TargetEngine(int poolSize, String workerName) {
-
+    public TargetEngine(int poolSize, String workerName, WorkerDashboardController controller) {
+        this.controller = controller;
         this.workerName = workerName;
         if (poolSize < 6 && poolSize > 0) {
             this.poolSize = poolSize;
@@ -185,9 +195,9 @@ public class TargetEngine {
     // ------------------------------------------- engine management -------------------------------------------------//
 
 
-    public void addTasksToQueue(List<TaskTarget> taskTargets, String s) {
+    public void addTasksToQueue(List<TaskTarget> taskTargets) {
         taskTargets.forEach(target -> {
-            if ("COMPILATION".equals(s)) {
+            if ("COMPILATION".equals(target.getTaskType().toString())) {
                 performCompilation(target);
             } else {
                 performSimulation(target);
@@ -199,7 +209,6 @@ public class TargetEngine {
         this.finishedWork.add(target);
         this.finishedLogs.add(targetLogs);
         updateNumberOfActiveThreads(-1);
-        System.out.println(target.name + "in queue");
         if (timerForPushing == null) { //lazy
             timerForPushing = new Timer();
             schedulePushForFinishedTargets();
@@ -252,11 +261,8 @@ public class TargetEngine {
         resOfTargetTaskRun.outPutData.add("* The task finished compiling: " + ts.toString().substring(10));
         resOfTargetTaskRun.outPutData.add("* Outcome of the task: " + targetToExecute.state);
         resOfTargetTaskRun.outPutData.add("* Time taken to compile: " + TimeUtil.ltd(resOfTargetTaskRun.totalTimeToRun));
-        // perform on server side after updating the task about the results
-        // resOfTargetTaskRun.outPutData.add("* Targets opened : " + resOfTargetTaskRun.targetOpened);
         if (!javacErrorMessage.isEmpty()) {
             resOfTargetTaskRun.outPutData.add("* Error message from javac: " + javacErrorMessage);
-            //resOfTargetTaskRun.outPutData.add("* Target skipped due to failure: " + resOfTargetTaskRun.SkippedTargets);
         }
     }
 
@@ -284,12 +290,12 @@ public class TargetEngine {
     }
 
     private void simulateRun(TaskTarget target, accumulatorForWritingToFile targetLogs) {
-        System.out.println("entered simulation " + target.name);
         targetLogs.startTime = System.currentTimeMillis();
         Timestamp ts = new Timestamp(targetLogs.startTime);
         try {
             if (target.isRandom) {
                 int randomNumberToWait = random.nextInt(target.msToRun);
+                targetLogs.outPutData.add("* target was ran by : " + workerName);
                 targetLogs.outPutData.add("  * going to sleep for " + TimeUtil.ltd(randomNumberToWait));
 
                 targetLogs.outPutData.add("  * going to sleep, good night " + ts.toString().substring(10));
@@ -308,7 +314,6 @@ public class TargetEngine {
 
         } catch (InterruptedException e) { /**/ }
         targetLogs.endTime = System.currentTimeMillis();
-        System.out.println("finished sim :" + target.name);
     }
 
     private void updateStatusAccordingToResults(TaskTarget target) {
@@ -320,6 +325,5 @@ public class TargetEngine {
         } else {
             target.state = TargetState.FAILURE;
         }
-        System.out.println("sim result is " + target.name + " finishd " + target.state);
     }
 }

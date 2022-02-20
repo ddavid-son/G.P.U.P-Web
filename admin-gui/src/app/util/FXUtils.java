@@ -5,7 +5,7 @@ import javafx.scene.control.Alert;
 
 public class FXUtils {
     public static void handleErrors(Exception e, String bodyMessage, String headerMessage) {
-        Platform.runLater(() -> {
+       /* Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error occurred");
             alert.setHeaderText(headerMessage);
@@ -15,7 +15,8 @@ public class FXUtils {
                 alert.setContentText(bodyMessage);
             }
             alert.showAndWait();
-        });
+        });*/
+        System.out.println(e.getMessage());
     }
 
 }

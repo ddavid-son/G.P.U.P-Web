@@ -8,6 +8,7 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public abstract class Task implements Serializable {
 
@@ -16,6 +17,7 @@ public abstract class Task implements Serializable {
     String serverFullPath;
     boolean allGraphHasBeenProcessed;
     Consumer<ProgressDto> finishedTarget;
+    private final GraphManager costumeGraph;
     List<String> waitingList = new LinkedList<>();
     final Object lockForUpdateTables = new Object();
     Map<String, TaskTarget> graph = new HashMap<>();
@@ -32,6 +34,13 @@ public abstract class Task implements Serializable {
     public Set<String> failedSet = new HashSet<>();
     public UpdateListsDTO updateListsDTO = new UpdateListsDTO();
 
+    public List<String> getFailedAndSkippedList() {
+        List<String> result = new LinkedList<>();
+        result.addAll(failedSet);
+        result.addAll(skippedSet);
+        return result;
+    }
+
 
     public void pauseTask() {
     }
@@ -44,19 +53,26 @@ public abstract class Task implements Serializable {
 
     }
 
-    public UpdateListsDTO getUpdateListsDTO() {
+    public UpdateListsDTO getUpdateListsDTO(int listedUsers) {
         synchronized (lockForUpdateTables) {
+
             updateListsDTO.setAll(
                     frozenSet, warningSet, skippedSet, SuccessSet,
                     inProcessSet, waitingSet, failedSet);
 
+            updateListsDTO.setRegisteredUsers(listedUsers);
+            if (allGraphHasBeenProcessed && inProcessSet.isEmpty()) {
+                updateListsDTO.startTime = startTime;
+                updateListsDTO.endTime = System.currentTimeMillis();
+            }
             return updateListsDTO;
         }
     }
 
     // ---------------------------------------------- ctor and utils ------------------------------------------------ //
-    public Task(boolean allGraphHasBeenProcessed, int numberOfThreads, GraphManager graphManager,
+    public Task(boolean allGraphHasBeenProcessed, GraphManager graphManager,
                 Consumer<accumulatorForWritingToFile> finishedTargetLog, Consumer<ProgressDto> finishedTarget) {
+        this.costumeGraph = graphManager;
         this.allGraphHasBeenProcessed = allGraphHasBeenProcessed;
         setConsumers(finishedTargetLog, finishedTarget);
         buildTaskGraph(graphManager);
@@ -130,7 +146,7 @@ public abstract class Task implements Serializable {
         return graph.get(targetName).enterProcess;
     }
 
-    public List<String> getFailedOrSkipped(String targetName) {
+/*    public List<String> getFailedOrSkipped(String targetName) {
         return graph.get(targetName).nameOfFailedOrSkippedDependencies;
     }
 
@@ -144,7 +160,7 @@ public abstract class Task implements Serializable {
                 String.join(",", graph.get(targetName).nameOfFailedOrSkippedDependencies),
                 String.join(",", graph.get(targetName).dependsOn)
         );
-    }
+    }*/
 
     private String getNamesToRunLater(TaskTarget targetToExecute, accumulatorForWritingToFile finalResOfTargetTaskRun) {
         if (targetToExecute.state == TargetState.FAILURE) {
@@ -177,7 +193,7 @@ public abstract class Task implements Serializable {
     }
 
     protected void writeTargetResultsToLogFile(accumulatorForWritingToFile resOfTargetTaskRun) {
-        File logFile = new File(serverFullPath + ".log");
+        File logFile = new File(serverFullPath + "\\" + taskName + " - " + resOfTargetTaskRun.targetName + ".log");
 
         try {
             if (!logFile.exists()) {
@@ -227,7 +243,6 @@ public abstract class Task implements Serializable {
 
     protected synchronized void removeAndUpdateDependenciesAfterSuccess(TaskTarget targetToExecute,
                                                                         accumulatorForWritingToFile resOfTargetTaskRun) {
-
         targetToExecute.requiredFor.forEach(neighbour -> {
             graph.get(neighbour).dependsOn.remove(targetToExecute.name);
             if (graph.get(neighbour).dependsOn.isEmpty()) {
@@ -235,7 +250,7 @@ public abstract class Task implements Serializable {
                         !waitingList.contains(neighbour)) {
                     //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(neighbour, TargetState.WAITING)));
                     waitingList.add(neighbour);
-                    moveTargetsBetweenSets(frozenSet, waitingSet, targetToExecute.name);
+                    moveTargetsBetweenSets(frozenSet, waitingSet, neighbour);
                     graph.get(neighbour).state = TargetState.WAITING;
                 }
                 resOfTargetTaskRun.targetOpened.add(neighbour);
@@ -251,7 +266,7 @@ public abstract class Task implements Serializable {
                     if (!resOfTargetTaskRun.SkippedTargets.contains(ancestor))
                         resOfTargetTaskRun.SkippedTargets.add(ancestor);
                     notifyAllAncestorToBeSkipped(graph.get(ancestor), resOfTargetTaskRun);
-                    moveTargetsBetweenSets(frozenSet, skippedSet, targetToExecute.name);
+                    moveTargetsBetweenSets(frozenSet, skippedSet, ancestor);
                     graph.get(ancestor).state = TargetState.SKIPPED;
                     graph.get(ancestor).nameOfFailedOrSkippedDependencies.add(targetToExecute.name);
                 }
@@ -275,6 +290,40 @@ public abstract class Task implements Serializable {
                 updateOpenTargets(targetToExecute, resOfTargetTaskRun);
                 break;
         }
+        System.out.println(resOfTargetTaskRun);
+    }
+
+    public List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState) {
+        List<String> info = new ArrayList<>();
+        info.add(targetName);//0
+        info.add(graph.get(targetName).type.toString());//1
+        info.add("");//2
+        info.add(targetState.toString());//3
+        switch (targetState) {
+            case WAITING:
+                long waiting = System.currentTimeMillis() - graph.get(targetName).enterWaiting;
+                info.add(TimeUtil.ltd(waiting));
+                break;
+            case IN_PROCESS:
+                long processing = System.currentTimeMillis() - graph.get(targetName).enterProcess;
+                info.add(TimeUtil.ltd(processing));
+                break;
+            case SKIPPED:
+                info.add(costumeGraph.getDependsOnOfByName(targetName).stream().filter(neighbour ->
+                        failedSet.contains(neighbour) || skippedSet.contains(neighbour)).collect(Collectors.joining(",")));
+                break;
+            case FROZEN:
+                info.add(costumeGraph.getDependsOnOfByName(targetName).stream().filter(neighbour ->
+                        frozenSet.contains(neighbour) || inProcessSet.contains(neighbour) ||
+                                waitingSet.contains(neighbour)).collect(Collectors.joining(",")));
+                break;
+            case SUCCESS:
+            case WARNING:
+            case FAILURE:
+                info.add(targetState.toString());
+                break;
+        }
+        return info;
     }
     // --------------------------------------------------- run ------------------------------------------------------ //
 

@@ -9,9 +9,7 @@ import argumentsDTO.CommonEnums.*;
 public abstract class TaskArgs {
 
     boolean isWhatIf;
-    int numOfThreads;
     TaskType taskType;
-    boolean isIncremental;
     RelationType relationType;
     final List<String> targetsSelectedForGraph = new ArrayList<>();
 
@@ -23,22 +21,14 @@ public abstract class TaskArgs {
     }
 
 
-    public TaskArgs(boolean isWhatIf, int numOfThreads, TaskType taskType, boolean isIncremental,
-                    RelationType relationType) {
+    public TaskArgs(boolean isWhatIf, TaskType taskType, RelationType relationType) {
         this.isWhatIf = isWhatIf;
         this.taskType = taskType;
         this.relationType = relationType;
-        this.numOfThreads = numOfThreads;
-        this.isIncremental = isIncremental;
     }
 
     public RelationType getRelationType() {
         return relationType;
-    }
-
-    public boolean isIncremental() {
-
-        return isIncremental;
     }
 
     public boolean isWhatIf() {
@@ -46,10 +36,6 @@ public abstract class TaskArgs {
         return isWhatIf;
     }
 
-    public int getNumOfThreads() {
-
-        return numOfThreads;
-    }
 
     public TaskType getTaskType() {
 
@@ -98,11 +84,10 @@ public abstract class TaskArgs {
                 "taskOwner=" + taskOwner + "\n" +
                 "originalGraph=" + originalGraph + "\n" +
                 "taskType=" + taskType + "\n" +
-                "numOfThreads=" + numOfThreads + "\n" +
                 "isWhatIf=" + isWhatIf + "\n" +
-                "isIncremental=" + isIncremental + "\n" +
                 "relationType=" + relationType + "\n" +
                 "targetsSelectedForGraph=" + targetsSelectedForGraph;
     }
 
+    public abstract TaskArgs cloneArgs();
 }

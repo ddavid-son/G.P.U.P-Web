@@ -4,10 +4,6 @@ import app.circleDisplay.CircleDisplayController;
 import app.dashboard.DashBoardController;
 import app.findAllPaths.FindAllPathsController;
 import app.graphTableView.GraphTableViewController;
-/*import app.circleDisplay.CircleDisplayController;
-import app.findAllPaths.FindAllPathsController;
-import app.relatedView.RelatedViewController;
-import app.serialSet.SerialSetController;*/
 import app.relatedView.RelatedViewController;
 import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
@@ -23,12 +19,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -36,7 +29,6 @@ import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -66,8 +58,6 @@ public class ControlPanelController {
     public List<String> targetFromPreviousRun;
     public String themeCSSPath = "/resources/css/theme1.css";
 
-    private File activeFile;
-    private ScrollPane serialSetScreen;
     private final String FIND_ALL_PATHS_FXML_FILE = "/resources/fxml/findAllPaths.fxml";
     private final String CIRCLE_DISPLAY_FXML_FILE = "/resources/fxml/circleDisplay.fxml";
     private ScrollPane dashboard;
@@ -184,10 +174,6 @@ public class ControlPanelController {
         });
     }
 
-    public File getActiveFile() {
-        return activeFile;
-    }
-
     public void findAllPaths() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
@@ -198,7 +184,6 @@ public class ControlPanelController {
             root.getStylesheets().add(themeCSSPath);
 
             PathFindPopUpWindow.setAppController(this);
-            //PathFindPopUpWindow.loadComboBoxes(execution.getAllTargetNames(), execution);
             getAllTargets(engineName, PathFindPopUpWindow::loadComboBoxes);
 
             Stage stage = new Stage();
@@ -314,7 +299,6 @@ public class ControlPanelController {
         }
         targetFromPreviousRun = targetNames; // here for the visibility of Incremental button
         taskArgs.getTargetsSelectedForGraph().addAll(targetNames);
-        //goToTaskView(taskArgs);
         delegateExecutionOfTaskToAnotherThread(taskArgs);
     }
 
@@ -417,34 +401,11 @@ public class ControlPanelController {
 
         return new ArrayList<>();
     }
-
-    public boolean currentSelectedTargetsAreTheSameAsPreviousRun() {
-        List<String> targetNames = graphTableViewComponentController.getSelectedTargetNames();
-        return targetNames.equals(targetFromPreviousRun);
-        //todo: this is not accurate when the order of the list is changed(maybe because of sorting option of the table)
-    }
-
-    public void copyTextToClipboard(String text) {
-        Clipboard clipboard = Clipboard.getSystemClipboard();
-        ClipboardContent content = new ClipboardContent();
-        content.putString(text);
-        clipboard.setContent(content);
-    }
-
-    public void openFile(String imagePath) {
-        try {
-            Desktop.getDesktop().open(new File(imagePath));
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-    }
     // -------------------------------------------------task methods------------------------------------------------- //
 
     //----------------------------------------------- task view ----------------------------------------------------- //
     public void goToTaskView(TaskArgs taskArgs) {
-        if (!taskArgs.isIncremental())
-            createNewTaskController(taskArgs);
-        // replace the center of the main screen with the task view
+        createNewTaskController(taskArgs);
         mainScreen.setCenter(taskViewScreen);
     }
 
@@ -479,21 +440,6 @@ public class ControlPanelController {
         mainScreen.setCenter(graphTableViewComponent);
     }
 
-    public void resetListOnTaskView(boolean isIncremental) {
-        taskViewController.resetAllLists(isIncremental);
-    }
-
-    public void resumeExecution() {
-        //execution.resumeTask();
-    }
-
-    public void pauseExecution() {
-        //execution.pauseTask();
-    }
-
-    public void setNumberOfThreads(Integer value) {
-        //execution.setNumberOfThreads(value);
-    }
 
     public void setDashboardController(DashBoardController dashBoardController) {
         this.dashBoardController = dashBoardController;

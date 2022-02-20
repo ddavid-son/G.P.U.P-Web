@@ -1,6 +1,7 @@
 package argumentsDTO;
 
 import argumentsDTO.CommonEnums.*;
+
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,17 +28,17 @@ public class accumulatorForWritingToFile implements Serializable {
 
     @Override
     public String toString() {
-        return "accumulatorForWritingToFile{" +
-                "targetName='" + targetName + '\'' +
-                ", startTime=" + startTime +
-                ", endTime=" + endTime +
-                ", UserData='" + UserData + '\'' +
-                ", targetType=" + targetType +
-                ", SkippedTargets=" + SkippedTargets +
-                ", targetOpened=" + targetOpened +
-                ", targetState=" + targetState +
-                ", totalTimeToRun=" + totalTimeToRun +
-                ", outPutData=" + outPutData +
+        return "accumulatorForWritingToFile{" + "\n" +
+                "targetName='" + targetName + '\'' + "\n" +
+                ", startTime=" + startTime + "\n" +
+                ", endTime=" + endTime + "\n" +
+                ", UserData='" + UserData + '\'' + "\n" +
+                ", targetType=" + targetType + "\n" +
+                ", SkippedTargets=" + SkippedTargets + "\n" +
+                ", targetOpened=" + targetOpened + "\n" +
+                ", targetState=" + targetState + "\n" +
+                ", totalTimeToRun=" + totalTimeToRun + "\n" +
+                ", outPutData=" + outPutData + "\n" +
                 '}';
     }
 }

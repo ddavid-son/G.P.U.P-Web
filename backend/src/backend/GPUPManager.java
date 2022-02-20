@@ -6,9 +6,12 @@ import argumentsDTO.TaskArgs;
 import argumentsDTO.TaskTarget;
 import argumentsDTO.accumulatorForWritingToFile;
 import dataTransferObjects.*;
+import javafx.scene.paint.Color;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static javafx.scene.paint.Color.RED;
 
 
 public class GPUPManager {
@@ -16,6 +19,7 @@ public class GPUPManager {
     private final Map<String, User> users = new HashMap<>(); // jsessionid -> user name // now with username cookie this is no longer necessary
     private final Map<String, TaskManager> tasks = new HashMap<>(); // taskName TO taskManager
     private final Map<String, User> username2User = new HashMap<>();
+    private final Map<String, Integer> taskName2MaxIndex = new HashMap<>();
 
 
     // ctor and utils refreshers
@@ -47,10 +51,9 @@ public class GPUPManager {
     }
 
     public boolean addTask(TaskManager taskManager) {
-        //
-
         if (!tasks.containsKey(taskManager.getTaskName())) {
             tasks.put(taskManager.getTaskName(), taskManager);
+            taskName2MaxIndex.put(taskManager.getTaskName(), 0);
             return true;
         }
         // consider adding the task with updated name here
@@ -98,8 +101,10 @@ public class GPUPManager {
     }
 
     public void joinTask(String taskName, String workerName) {
-        tasks.get(taskName).addWorker(workerName);
-        username2User.get(workerName).addTask(taskName);
+        if (!"CANCELLED".equals(tasks.get(taskName).getStatus()) && !"FINISHED".equals(tasks.get(taskName).getStatus())) {
+            tasks.get(taskName).addWorker(workerName);
+            username2User.get(workerName).addTask(taskName);
+        }
     }
 
     public void leaveTask(String taskName, String workerName) {
@@ -132,9 +137,9 @@ public class GPUPManager {
         for (String taskName : tasksImIn) {
             if (workToSend.size() == askedWork)
                 break;
-            TaskTarget t = tasks.get(taskName).getTargetToExecute();
-            if (t != null)
-                workToSend.add(t);
+            List<TaskTarget> t = tasks.get(taskName).getTargetToExecute();
+            if (!t.isEmpty())
+                workToSend.add(t.get(0));
         }
     }
 
@@ -168,6 +173,23 @@ public class GPUPManager {
         return userExists(username) && username2User.get(username).role.equals(role);
     }
 
+    public boolean createTaskFromExistingTask(String taskName, boolean isIncremental) {
+
+        TaskArgs taskArgs = tasks.get(taskName).getTaskArgsForNewTask(isIncremental);
+
+        if (taskArgs == null) {
+            return false;
+        }
+
+        taskName2MaxIndex.put(taskName, taskName2MaxIndex.get(taskName) + 1);
+        taskArgs.setTaskName(taskArgs.getTaskName() + " " + taskName2MaxIndex.get(taskName));
+
+        addTask(GPUPEngines.get(taskArgs.getOriginalGraph())
+                .buildTask(taskArgs, null, null)
+        );
+        return true;
+    }
+
 
     // admin dashboard
     public List<String> getLoadedGraphs() {
@@ -198,6 +220,30 @@ public class GPUPManager {
                 tasks.get(taskName).cancelledTask();
                 break;
         }
+    }
+
+    public List<String> getInfoAboutClockedTarget(String taskName, String targetName, String targetState) {
+        return tasks.get(taskName).getTargetClickedInfo(targetName, stateToColor(targetState));
+    }
+
+    private TargetState stateToColor(String state) {
+        switch (state) {
+            case "IN_PROGRESS":
+                return TargetState.IN_PROCESS;
+            case "SKIPPED":
+                return TargetState.SKIPPED;
+            case "FAILURE":
+                return TargetState.FAILURE;
+            case "FROZEN":
+                return TargetState.FROZEN;
+            case "WAITING":
+                return TargetState.WAITING;
+            case "WARNING":
+                return TargetState.WARNING;
+            case "SUCCESS":
+                return TargetState.SUCCESS;
+        }
+        return TargetState.SKIPPED;
     }
 
 

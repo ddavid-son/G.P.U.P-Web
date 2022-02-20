@@ -96,11 +96,7 @@ public class SideMenuController {
 
             root.getStylesheets().add(appController.themeCSSPath);
             taskFormController.setAppController(appController, this);
-            taskFormController.setTaskController(
-                    5,
-                    false,
-                    true //currentFileInTask.equals(appController.getActiveFile())
-            );
+            taskFormController.setTaskController();
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -168,11 +164,7 @@ public class SideMenuController {
             e.printStackTrace();
         }
     }
-
-    public void setNewFileForTask() {
-
-        currentFileInTask = appController.getActiveFile();
-    }
+    
 
     public void graphVizBtnClicked(ActionEvent actionEvent) {
    /*

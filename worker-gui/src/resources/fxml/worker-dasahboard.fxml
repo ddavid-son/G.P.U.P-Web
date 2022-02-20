@@ -81,7 +81,7 @@
                </font>
             </Label>
             <ListView fx:id="taskHeaderTable" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="2" GridPane.rowSpan="2" />
-            <Label fx:id="walletLabel" text="Label" GridPane.columnIndex="5" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="TOP">
+            <Label fx:id="walletLabel" text="Wallet: 0" GridPane.columnIndex="5" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="TOP">
                <GridPane.margin>
                   <Insets right="10.0" top="10.0" />
                </GridPane.margin>
@@ -93,8 +93,14 @@
             </Label>
             <HBox fx:id="regHBox" alignment="BOTTOM_RIGHT" spacing="3.0" GridPane.columnIndex="3" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="BOTTOM">
                <children>
-                  <Button fx:id="leaveTaskBtn" mnemonicParsing="false" onAction="#onLeaveTaskBtnClicked" />
-                  <Button fx:id="joinTaskBtn" mnemonicParsing="false" onAction="#onJoinTaskBtnClicked" />
+                  <Button fx:id="leaveTaskBtn" mnemonicParsing="false" onAction="#onLeaveTaskBtnClicked">
+                     <HBox.margin>
+                        <Insets bottom="2.0" />
+                     </HBox.margin></Button>
+                  <Button fx:id="joinTaskBtn" mnemonicParsing="false" onAction="#onJoinTaskBtnClicked">
+                     <HBox.margin>
+                        <Insets bottom="2.0" />
+                     </HBox.margin></Button>
                </children>
                <opaqueInsets>
                   <Insets />

@@ -32,11 +32,13 @@ import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
 import java.io.IOException;
+import java.io.PipedReader;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static app.util.FXUtils.handleErrors;
+import static javafx.scene.paint.Color.RED;
 
 public class TaskViewController {
 
@@ -80,12 +82,6 @@ public class TaskViewController {
     private Label taskTypeHeaderLabel;
 
     @FXML
-    private Label numberOfThreadsLabel;
-
-    @FXML
-    private Label isIncrementalLabel;
-
-    @FXML
     private Button setNewThreadsBtn;
 
     @FXML
@@ -94,7 +90,29 @@ public class TaskViewController {
     @FXML
     private Label taskTerminatedLabel;
 
-    private Label isRandomLabel;
+    @FXML
+    private Label taskNameLabel;
+
+    @FXML
+    private Label originalGraphLabel;
+
+    @FXML
+    private Label waitingLabel;
+
+    @FXML
+    private Label inProcessLabel;
+
+    @FXML
+    private Label listedWorkersLabel;
+
+    @FXML
+    private Button incrementalTaskBtn;
+
+    @FXML
+    private Button duplicateTaskBtn;
+
+    @FXML
+    private Label creatingTaskStatuse;
 
     private int totalNumberOfTargets;
     private int finishedNumberTargets = 0;
@@ -106,7 +124,7 @@ public class TaskViewController {
     List<StackPane> finishedListItems = new ArrayList<>();
     List<StackPane> inProcessListItems = new ArrayList<>();
     List<String> allFinishedTasks = new ArrayList<>(); // dedicated to the progress bar
-    List<StackPane> allTargets = new ArrayList<>();
+    Set<StackPane> allFinishedTasksSet = new HashSet<>();
 
     ObservableList<StackPane> obsWaitingList = FXCollections.observableArrayList();
     ObservableList<StackPane> obsFailedList = FXCollections.observableArrayList();
@@ -115,14 +133,6 @@ public class TaskViewController {
     ObservableList<StackPane> obsInProcessList = FXCollections.observableArrayList();
     ObservableList<StackPane> obsFrozenList = FXCollections.observableArrayList();
     ObservableList<StackPane> obsAllTargets = FXCollections.observableArrayList();
-
-/*    ObservableList<StackPane> obsWaitingList;
-    ObservableList<StackPane> obsFailedList;
-    ObservableList<StackPane> obsSkippedList;
-    ObservableList<StackPane> obsFinishedList;
-    ObservableList<StackPane> obsInProcessList;
-    ObservableList<StackPane> obsFrozenList;
-    ObservableList<StackPane> obsAllTargets;*/
 
     private boolean paused = false;
     private final Random r = new Random();
@@ -210,11 +220,11 @@ public class TaskViewController {
         handleListAndObservables(taskArgs);
         taskName = taskArgs.getTaskName();
 
-        numberOfThreadsSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 5, 1)
-        );
-
+        incrementalTaskBtn.setGraphic(getIcon("/filterIcon.png", 35));
+        duplicateTaskBtn.setGraphic(getIcon("/duplicateIcon.png", 35));
+        abortTaskBtn.setGraphic(getIcon("/abortIcon.png", 35));
         playPauseBtn.setGraphic(getIcon("/playBtnIcon.png", 35));
+
         progressBar.setProgress(0F);
         scheduleTargetsUpdate();
     }
@@ -265,15 +275,7 @@ public class TaskViewController {
     }
 
     private void updateLists(UpdateListsDTO updateListsDTO) {
-/*  in case the jat is not the one updating the lists
-        frozenListItems = listToCircles(updateListsDTO.getFrozenAsList(), "FROZEN");
-        waitingListItems = listToCircles(updateListsDTO.getWaitingAsList(), "WAITING");
-        failedListItems = listToCircles(updateListsDTO.getFailedAsList(), "FAILURE");
-        skippedListItems = listToCircles(updateListsDTO.getSkippedAsList(), "SKIPPED");
-        inProcessListItems = listToCircles(updateListsDTO.getInProcessAsList(), "IN_PROCESS");
-        finishedListItems = listToCircles(updateListsDTO.getWarningAsList(), "WARNING");
-        finishedListItems.addAll(listToCircles(updateListsDTO.getSuccessAsList(), "SUCCESS"));
-*/
+
         Platform.runLater(() -> {
             obsFrozenList.setAll(listToCircles(updateListsDTO.getFrozenAsList(), "FROZEN"));
             obsWaitingList.setAll(listToCircles(updateListsDTO.getWaitingAsList(), "WAITING"));
@@ -283,6 +285,17 @@ public class TaskViewController {
             obsFinishedList.setAll(listToCircles(updateListsDTO.getWarningAsList(), "WARNING"));
 
             obsFinishedList.addAll(listToCircles(updateListsDTO.getSuccessAsList(), "SUCCESS"));
+
+            int done = obsSkippedList.size() + obsFailedList.size() + obsFinishedList.size();
+            progressBar.setProgress((double) done / (double) totalNumberOfTargets);
+
+            waitingLabel.setText("Waiting(" + obsWaitingList.size() + ")");
+            inProcessLabel.setText("In Process(" + obsInProcessList.size() + ")");
+            listedWorkersLabel.setText("Listed workers: " + updateListsDTO.getRegisteredUsers());
+            if (updateListsDTO.taskEnded()) {
+                timerForListUpdates.cancel();
+                showSummaryWindow(updateListsDTO.getDuration());
+            }
         });
     }
 
@@ -293,6 +306,13 @@ public class TaskViewController {
             StackPane circle = createCircle(name, stateToColor(state));
             circles.add(circle);
         }
+
+        for (StackPane target : circles) {
+            ((Button) target.getChildren().get(2)).onActionProperty().setValue(event -> {
+                getInfoAboutTargetInExecution(target);
+            });
+        }
+
         return circles;
     }
 
@@ -322,11 +342,11 @@ public class TaskViewController {
     private Color stateToColor(String state) {
         switch (state) {
             case "IN_PROGRESS":
-                return Color.ORANGE;
+                return Color.LIGHTSALMON;
             case "SKIPPED":
                 return Color.GRAY;
             case "FAILURE":
-                return Color.RED;
+                return RED;
             case "FROZEN":
                 return Color.BLUE;
             case "WAITING":
@@ -343,11 +363,8 @@ public class TaskViewController {
 
     private void setLabelsAccordingToUserInput(TaskArgs taskArgs) {
         taskTypeHeaderLabel.setText(taskArgs.getTaskType().toString());
-        numberOfThreadsLabel.setText("Number of threads: " + taskArgs.getNumOfThreads());
-        isIncrementalLabel.setText("Task will be performed: " + (taskArgs.isIncremental() ?
-                "Incrementally" :
-                "From scratch")
-        );
+        originalGraphLabel.setText("Graph Name: " + taskArgs.getOriginalGraph());
+        taskNameLabel.setText("Task Name: " + taskArgs.getTaskName());
 
         if (taskArgs.getTaskType() == TaskType.COMPILATION) {
             CompilationArgs compilationArgs = (CompilationArgs) taskArgs;
@@ -390,7 +407,6 @@ public class TaskViewController {
         }
     }
 
-
     private void handleListAndObservables(TaskArgs taskArgs) {
         inProcessList.setItems(obsInProcessList);
         finishedList.setItems(obsFinishedList);
@@ -399,24 +415,68 @@ public class TaskViewController {
         waitingList.setItems(obsWaitingList);
         frozenList.setItems(obsFrozenList);
 
-/*        for (StackPane target : obsAllTargets) {
+        for (StackPane target : obsAllTargets) {
             ((Button) target.getChildren().get(2)).onActionProperty().setValue(event -> {
                 getInfoAboutTargetInExecution(target);
             });
-        }*/
+        }
+
         obsFrozenList.addAll(obsAllTargets);
     }
 
     private void getInfoAboutTargetInExecution(StackPane target) {
-        new Thread(() -> {
-            //prints the log to the user screen
-            /*publishToUser(
-                    execution.getInfoAboutTargetInExecution(
-                            target.getId(),
-                            cts(((Circle) target.getChildren().get(0)).getFill())
-                    ));*/
-            System.out.println("Target " + target.getId() + " was clicked");
-        }).start();
+        fetchInfoOfTargetWhenClicked(
+                target.getId(),
+                cts(((Circle) target.getChildren().get(0)).getFill())
+        );
+    }
+
+    private TargetState cts(Paint paint) {
+
+        if (Color.LIGHTSALMON.equals(paint)) {
+            return TargetState.IN_PROCESS;
+        } else if (Color.GRAY.equals(paint)) {
+            return TargetState.SKIPPED;
+        } else if (RED.equals(paint)) {
+            return TargetState.FAILURE;
+        } else if (Color.BLUE.equals(paint)) {
+            return TargetState.FROZEN;
+        } else if (Color.PINK.equals(paint)) {
+            return TargetState.WAITING;
+        } else if (Color.YELLOW.equals(paint)) {
+            return TargetState.WARNING;
+        } else /*if (Color.LIMEGREEN.equals(paint))*/ {
+            return TargetState.SUCCESS;
+        }
+    }
+
+    private void fetchInfoOfTargetWhenClicked(String targetName, TargetState targetState) {
+        String finaUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/target-clicked-info")
+                .newBuilder()
+                .addQueryParameter("target-name", targetName)
+                .addQueryParameter("target-state", targetState.toString())
+                .addQueryParameter("task-name", taskName)
+                .build()
+                .toString();
+
+        HttpClientUtil.runAsync(finaUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Failed to fetch info of target clicked");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String res = response.body().string();
+                if (response.isSuccessful()) {
+                    publishToUser(
+                            HttpClientUtil.GSON.fromJson(res, new TypeToken<List<String>>() {
+                            }.getType())
+                    );
+                } else
+                    handleErrors(null, res, "Failed to fetch info of target clicked");
+            }
+        });
     }
 
     private void publishToUser(List<String> message) {
@@ -468,63 +528,43 @@ public class TaskViewController {
         return list.stream().anyMatch(t -> t.getId().equals(target));
     }
 
-    private TargetState cts(Paint paint) {
-
-        if (paint.equals(Color.RED)) {
-            return TargetState.FAILURE;
-        } else if (paint.equals(Color.BLUE)) {
-            return TargetState.FROZEN;
-        } else if (paint.equals(Color.GREEN)) {
-            return TargetState.SUCCESS;
-        } else if (paint.equals(Color.YELLOW)) {
-            return TargetState.WARNING;
-        } else if (paint.equals(Color.PINK)) {
-            return TargetState.WAITING;
-        } else if (paint.equals(Color.ORANGE)) {
-            return TargetState.IN_PROCESS;
-        } else {
-            return TargetState.SKIPPED;
-        }
+    @FXML
+    void onDuplicateTaskBtnClicked(ActionEvent event) {
+        createTaskFromCurrentTask(false);
     }
 
-    private void handelLogOfTask(accumulatorForWritingToFile targetLog) {
+    @FXML
+    void onIncrementalTaskBtnClicked(ActionEvent event) {
+        createTaskFromCurrentTask(true);
+    }
 
-        targetLog.outPutData.forEach(s -> {
-            logListViw.appendText("\n" + TimeUtil.ltn(System.currentTimeMillis()) + " " + s);
-            logListViw.positionCaret(0);
+    private void createTaskFromCurrentTask(boolean isIncremental) {
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/duplicate-task").
+                newBuilder()
+                .addQueryParameter("task-name", taskName)
+                .addQueryParameter("incremental", String.valueOf(isIncremental))
+                .build().toString();
+
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, null, "Failed to duplicate task");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String res = response.body().string();
+                Platform.runLater(() -> {
+                    creatingTaskStatuse.setText(res);
+                    if (response.isSuccessful()) {
+                        creatingTaskStatuse.setTextFill(Color.GREEN);
+                    } else {
+                        creatingTaskStatuse.setTextFill(Color.RED);
+                    }
+                    creatingTaskStatuse.setVisible(true);
+                });
+            }
         });
-        logListViw.appendText("\n");
-    }
-
-    private void handelFinishedTask(ProgressDto progressDto) {
-        updateProgressBar(progressDto);
-        if (playPauseBtn.isDisable())
-            playPauseBtn.setDisable(false);
-        if (progressDto.getTargetState() == TargetState.FAILURE)
-            handelFailedAndSkipped(progressDto.getTargetName());
-        else if (progressDto.getTargetState() == TargetState.SUCCESS ||
-                progressDto.getTargetState() == TargetState.WARNING)
-            handelSuccessAndOpening(progressDto.getTargetName(), progressDto.getTargetState());
-        else
-            manageListsMovement(progressDto);
-    }
-
-    private void handelSuccessAndOpening(String nameOfSuccessAndOpening, TargetState targetState) {
-        String[] failedAndSkipped = nameOfSuccessAndOpening.split(",");
-        manageListsMovement(new ProgressDto(failedAndSkipped[0], targetState));
-
-        for (int i = 1; i < failedAndSkipped.length; i++) {
-            manageListsMovement(new ProgressDto(failedAndSkipped[i], TargetState.WAITING));
-        }
-    }
-
-    private void handelFailedAndSkipped(String namesOfFailedAndSkipped) {
-        String[] failedAndSkipped = namesOfFailedAndSkipped.split(",");
-        manageListsMovement(new ProgressDto(failedAndSkipped[0], TargetState.FAILURE));
-
-        for (int i = 1; i < failedAndSkipped.length; i++) {
-            manageListsMovement(new ProgressDto(failedAndSkipped[i], TargetState.SKIPPED));
-        }
     }
 
     private void manageListsMovement(ProgressDto targetLog) {
@@ -592,7 +632,7 @@ public class TaskViewController {
                 switch (targetLog.getTargetState()) {
                     case FAILURE:
                         if (!failedListItems.contains(temp)) {
-                            ((Circle) temp.getChildren().get(0)).fillProperty().setValue(Color.RED);
+                            ((Circle) temp.getChildren().get(0)).fillProperty().setValue(RED);
                             obsFailedList.add(temp);
                         }
                         break;
@@ -613,15 +653,6 @@ public class TaskViewController {
         obsInProcessList.remove(temp);
     }
 
-    private void updateProgressBar(ProgressDto progressDto) {
-        if (progressDto.getTargetState() == TargetState.FAILURE ||
-                progressDto.getTargetState() == TargetState.WARNING ||
-                progressDto.getTargetState() == TargetState.SUCCESS) {
-            allFinishedTasks.addAll(Arrays.asList(progressDto.getTargetName().split(",")));
-        }
-        finishedNumberTargets = allFinishedTasks.size();
-        progressBar.setProgress((double) finishedNumberTargets / (double) totalNumberOfTargets);
-    }
 
     private void showSummaryWindow(long time) {
         try {

@@ -61,7 +61,7 @@ public interface Engine extends Serializable {
 
     WhatIfDTO getWhatIf(String targetName, RelationType type);
 
-    List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState);
+    //List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState);
 
     List<String> getWhatIf(List<String> targetNames, RelationType relationType);
 

@@ -1,5 +1,6 @@
 package app;
 
+import app.Utils.FXUtil;
 import app.Utils.HttpUtil;
 import app.engine.TargetEngine;
 import com.google.gson.reflect.TypeToken;
@@ -17,11 +18,11 @@ import javafx.scene.control.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import resources.Constants;
+import argumentsDTO.CommonEnums.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -98,11 +99,6 @@ public class WorkerDashboardController {
     @FXML
     private Button joinTaskBtn;
 
-
-    //@FXML
-    //private TableColumn<TaskInfoDTO, Rectangle> TaskEnrolledCol;
-    //private TableColumn<TaskInfoDTO, String> TaskEnrolledCol;
-
     private int cash = 0;
     private String workerName;
     private Stage primaryStage;
@@ -126,8 +122,10 @@ public class WorkerDashboardController {
         this.primaryStage = primaryStage;
         this.numberOfThreads = numberOfThreads;
         loggedInAs.setText("Hello " + username + "!");
-        engine = new TargetEngine(numberOfThreads, workerName);
-        walletLabel.textProperty().bind(new SimpleStringProperty("Wallet: " + cash));
+        engine = new TargetEngine(numberOfThreads, workerName, this);
+
+        joinTaskBtn.setGraphic(FXUtil.getIcon("/plusIcon.png", 24));
+        leaveTaskBtn.setGraphic(FXUtil.getIcon("/minusIcon.png", 24));
 
         scheduleTasksFetching();
         taskHeaderTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -178,6 +176,9 @@ public class WorkerDashboardController {
 
     private void updateTaskPeekTable(TaskInfoDTO taskInfoDTO) {
         ObservableList<TaskInfoDTO> taskInfoObs = FXCollections.observableArrayList(taskInfoDTO);
+
+        if (taskInfoDTO.getTaskStatus() == TaskStatus.CANCELED || taskInfoDTO.getTaskStatus().equals(TaskStatus.FINISHED))
+            engine.removeTask(taskInfoDTO.getTaskName());
 
         taskStatusCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getTaskStatus().toString())
@@ -287,6 +288,11 @@ public class WorkerDashboardController {
     @FXML
     void onLeaveTaskBtnClicked(ActionEvent event) {
         taskRegistration(taskHeaderTable.getSelectionModel().getSelectedItem(), false);
+    }
+
+    public synchronized void updateWallet(int earned) {
+        cash += earned;
+        Platform.runLater(() -> walletLabel.setText("Wallet: " + cash));
     }
     // ------------------------------------------------- task ------------------------------------------------//
 

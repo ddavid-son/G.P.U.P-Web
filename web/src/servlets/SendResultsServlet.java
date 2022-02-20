@@ -29,6 +29,9 @@ public class SendResultsServlet extends HttpServlet {
             List<TaskTarget> targets = SessionUtils.GSON.fromJson(jsons[1], new TypeToken<List<TaskTarget>>() {
             }.getType());
 
+            targets.forEach(System.out::println);
+            accs.forEach(System.out::println);
+
             if (targets.size() != accs.size() || targets.size() == 0) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 response.getWriter().write("number of work done is inconsistent");
@@ -41,8 +44,6 @@ public class SendResultsServlet extends HttpServlet {
         } else {
             response.getWriter().write("I dont know who you are " + userName);
         }
-
-
     }
 
     @Override

@@ -8,12 +8,22 @@ import argumentsDTO.CommonEnums.*;
 
 public class TaskTarget implements Serializable {
 
+    public String taskName;
+    public String userData;
     public TargetType type;
     public TargetState state;
     public final String name;
     public String workerName;
-    public String taskName;
-    public String userData;
+    public TaskType taskType;
+
+    public TaskType getTaskType() {
+        return taskType;
+    }
+
+    public void setTaskType(TaskType taskType) {
+        this.taskType = taskType;
+    }
+
     public long enterWaiting = 0;
     public long enterProcess = 0;
     public List<String> dependsOn;
@@ -99,4 +109,26 @@ public class TaskTarget implements Serializable {
         return this.nameOfFailedOrSkippedDependencies;
     }
 
+    @Override
+    public String toString() {
+        return "TaskTarget{" +
+                "type=" + type +
+                ", state=" + state +
+                ", name='" + name + '\'' +
+                ", workerName='" + workerName + '\'' +
+                ", taskName='" + taskName + '\'' +
+                ", userData='" + userData + '\'' +
+                ", enterWaiting=" + enterWaiting +
+                ", enterProcess=" + enterProcess +
+                ", dependsOn=" + dependsOn +
+                ", requiredFor=" + requiredFor +
+                ", nameOfFailedOrSkippedDependencies=" + nameOfFailedOrSkippedDependencies +
+                ", msToRun=" + msToRun +
+                ", isRandom=" + isRandom +
+                ", successRate=" + successRate +
+                ", successfulWithWarningRate=" + successfulWithWarningRate +
+                ", srcFolderPath='" + srcFolderPath + '\'' +
+                ", dstFolderPath='" + dstFolderPath + '\'' +
+                '}';
+    }
 }
