@@ -1,8 +1,6 @@
 package app.Utils;
 
-import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -19,7 +17,7 @@ public class FXUtil {
             }
             alert.showAndWait();
         });*/
-        System.out.println(e.getMessage());
+        System.out.println("ji");
     }
 
     public static Node getIcon(String resourceName, int size) {

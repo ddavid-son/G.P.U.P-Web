@@ -11,28 +11,25 @@ import utils.ServletUtils;
 import utils.SessionUtils;
 
 import java.io.IOException;
+import java.util.List;
 
 @WebServlet(name = "TaskPeekServlet", urlPatterns = "/get-task-peek")
 public class TaskPeekServlet extends HttpServlet {
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String taskName = request.getParameter("task-name");
+        //String taskName = request.getParameter("task-name");
         String userName = request.getParameter("user-name");
 
-        if (ServletUtils.getGPUPManager(request).taskExists(taskName)) {
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().write(
-                    SessionUtils.GSON.toJson(
-                            ServletUtils.getGPUPManager(request).getTaskInfo(taskName, userName),
-                            new TypeToken<TaskInfoDTO>() {
-                            }.getType()
-                    )
-            );
-        } else {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            response.getWriter().write("Task with the name \"" + taskName + "\" does not exists");
-        }
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.getWriter().write(
+                SessionUtils.GSON.toJson(
+                        ServletUtils.getGPUPManager(request).getTaskInfo(userName),
+                        new TypeToken<List<TaskInfoDTO>>() {
+                        }.getType()
+                )
+        );
+
     }
 
     @Override

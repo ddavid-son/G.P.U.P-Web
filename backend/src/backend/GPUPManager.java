@@ -82,11 +82,10 @@ public class GPUPManager {
 
 
     // worker dashboard
-    public TaskInfoDTO getTaskInfo(String taskName, String userName) {
-        if (tasks.containsKey(taskName)) {
-            return tasks.get(taskName).getTaskDto(userName);
-        }
-        return null;
+    public List<TaskInfoDTO> getTaskInfo(String userName) {
+        List<TaskInfoDTO> taskInfoDTOS = new ArrayList<>();
+        tasks.values().forEach(task -> taskInfoDTOS.add(task.getTaskDto(userName)));
+        return taskInfoDTOS;
     }
 
     public boolean taskExists(String taskName) {

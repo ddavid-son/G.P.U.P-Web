@@ -67,6 +67,9 @@ public class WorkerDashboardController {
     private TableColumn<TaskInfoDTO, Integer> pricingCol;
 
     @FXML
+    private TableColumn<TaskInfoDTO, String> taskNameCol;
+
+    @FXML
     private TableView<UserDto> usersTable; // UserHistoryDto
 
     @FXML
@@ -128,17 +131,11 @@ public class WorkerDashboardController {
         leaveTaskBtn.setGraphic(FXUtil.getIcon("/minusIcon.png", 24));
 
         scheduleTasksFetching();
-        taskHeaderTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null && !newValue.isEmpty()) {
-                fetchGraphPeekFromServer(newValue);
-            }
-        });
     }
 
-    private void fetchGraphPeekFromServer(String taskName) {
+    private void fetchGraphPeekFromServer() {
         String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-task-peek")
                 .newBuilder()
-                .addQueryParameter("task-name", taskName)
                 .addQueryParameter("user-name", workerName)
                 .build()
                 .toString();
@@ -153,9 +150,16 @@ public class WorkerDashboardController {
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 String responseBody = response.body().string();
                 if (response.isSuccessful()) {
-                    TaskInfoDTO taskInfoDTOList = HttpUtil.GSON.fromJson(responseBody, new TypeToken<TaskInfoDTO>() {
+                    List<TaskInfoDTO> taskInfoDTOList = HttpUtil.GSON.fromJson(responseBody, new TypeToken<List<TaskInfoDTO>>() {
                     }.getType());
+
                     Platform.runLater(() -> updateTaskPeekTable(taskInfoDTOList));
+
+                    taskInfoDTOList.forEach(taskInfo -> {
+                        if (taskInfo.getTaskStatus() == TaskStatus.CANCELED ||
+                                taskInfo.getTaskStatus().equals(TaskStatus.FINISHED))
+                            engine.removeTask(taskInfo.getTaskName());
+                    });
                 } else {
                     handleErrors(null,
                             responseBody,
@@ -174,12 +178,12 @@ public class WorkerDashboardController {
         usersTable.setItems(userHistoryObsList);
     }
 
-    private void updateTaskPeekTable(TaskInfoDTO taskInfoDTO) {
+    private void updateTaskPeekTable(List<TaskInfoDTO> taskInfoDTO) {
         ObservableList<TaskInfoDTO> taskInfoObs = FXCollections.observableArrayList(taskInfoDTO);
 
-        if (taskInfoDTO.getTaskStatus() == TaskStatus.CANCELED || taskInfoDTO.getTaskStatus().equals(TaskStatus.FINISHED))
-            engine.removeTask(taskInfoDTO.getTaskName());
-
+        taskNameCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getTaskName())
+        );
         taskStatusCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getTaskStatus().toString())
         );
@@ -267,10 +271,6 @@ public class WorkerDashboardController {
         }
     }
 
-    private void scheduleTargetsFetching() {
-
-    }
-
     private boolean assertTaskCredentials(String taskName, boolean joinOrLeave) {
         if (joinOrLeave) {
             return taskName != null && taskName.isEmpty() && !tasksImIn.contains(taskName) &&
@@ -282,12 +282,18 @@ public class WorkerDashboardController {
 
     @FXML
     void onJoinTaskBtnClicked(ActionEvent event) {
-        taskRegistration(taskHeaderTable.getSelectionModel().getSelectedItem(), true);
+        if (taskPeekTable.getSelectionModel().getSelectedItem() != null)
+            taskRegistration(taskPeekTable.getSelectionModel().getSelectedItem().getTaskName(), true);
+        else
+            resLogLabel.setText("Please select a task from the table first");
     }
 
     @FXML
     void onLeaveTaskBtnClicked(ActionEvent event) {
-        taskRegistration(taskHeaderTable.getSelectionModel().getSelectedItem(), false);
+        if (taskPeekTable.getSelectionModel().getSelectedItem() != null)
+            taskRegistration(taskPeekTable.getSelectionModel().getSelectedItem().getTaskName(), false);
+        else
+            resLogLabel.setText("Please select a task from the table first");
     }
 
     public synchronized void updateWallet(int earned) {
@@ -302,7 +308,7 @@ public class WorkerDashboardController {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                fetchTasksFromServer();
+                fetchGraphPeekFromServer();
             }
         }, 0, Constants.REFRESH_RATE);
 
