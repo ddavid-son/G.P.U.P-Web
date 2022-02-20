@@ -215,7 +215,6 @@ public class TaskFormController {
     // --------------------------------------------- Simulation Methods ----------------------------------------------//
     @FXML
     private void OnNewRunBtnClicked(ActionEvent event) {
-        //sideMenuController.setNewFileForTask();
         runSimulationTask();
     }
 

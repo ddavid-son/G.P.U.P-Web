@@ -61,7 +61,7 @@ public abstract class Task implements Serializable {
                     inProcessSet, waitingSet, failedSet);
 
             updateListsDTO.setRegisteredUsers(listedUsers);
-            if (allGraphHasBeenProcessed && inProcessSet.isEmpty()) {
+            if (allGraphHasBeenProcessed && inProcessSet.isEmpty() && updateListsDTO.endTime == 0) {
                 updateListsDTO.startTime = startTime;
                 updateListsDTO.endTime = System.currentTimeMillis();
             }

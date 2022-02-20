@@ -32,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
 import java.io.IOException;
-import java.io.PipedReader;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -73,16 +72,10 @@ public class TaskViewController {
     private Button playPauseBtn;
 
     @FXML
-    private Spinner<Integer> numberOfThreadsSpinner;
-
-    @FXML
     private ProgressBar progressBar;
 
     @FXML
     private Label taskTypeHeaderLabel;
-
-    @FXML
-    private Button setNewThreadsBtn;
 
     @FXML
     private Button abortTaskBtn;
@@ -116,15 +109,6 @@ public class TaskViewController {
 
     private int totalNumberOfTargets;
     private int finishedNumberTargets = 0;
-
-    List<StackPane> frozenListItems = new ArrayList<>();
-    List<StackPane> waitingListItems = new ArrayList<>();
-    List<StackPane> failedListItems = new ArrayList<>();
-    List<StackPane> skippedListItems = new ArrayList<>();
-    List<StackPane> finishedListItems = new ArrayList<>();
-    List<StackPane> inProcessListItems = new ArrayList<>();
-    List<String> allFinishedTasks = new ArrayList<>(); // dedicated to the progress bar
-    Set<StackPane> allFinishedTasksSet = new HashSet<>();
 
     ObservableList<StackPane> obsWaitingList = FXCollections.observableArrayList();
     ObservableList<StackPane> obsFailedList = FXCollections.observableArrayList();
@@ -207,11 +191,6 @@ public class TaskViewController {
             }
         });
 
-    }
-
-    @FXML
-    void onSetNewThreadsBtnClicked(ActionEvent event) {
-        //appController.setNumberOfThreads(numberOfThreadsSpinner.getValue());
     }
 
     public void setTaskView(TaskArgs taskArgs) {
@@ -567,93 +546,6 @@ public class TaskViewController {
         });
     }
 
-    private void manageListsMovement(ProgressDto targetLog) {
-        // switch on the state of the task
-        StackPane temp = new TaskCircle().getStackPane();
-        this.summery.add(targetLog.getTargetName() + " " + targetLog.getTargetState() + " visited switch");
-        switch (targetLog.getTargetState()) {
-            case WAITING:
-            case SKIPPED:
-                handelListInCaseOfStart(targetLog, temp);// the common ground here is -[frozen list -> else]
-                break;
-            case FAILURE:
-            case WARNING:
-            case SUCCESS:
-                handelListInCaseOfFinished(targetLog, temp); //the common ground here is -[inProcess list -> else]
-                break;
-            case IN_PROCESS:
-                handleListInCasOfInProcess(targetLog, temp);
-                break;
-        }
-    }
-
-    private void handleListInCasOfInProcess(ProgressDto targetLog, StackPane temp) {
-        for (StackPane stackPane : obsWaitingList) {
-            if (stackPane.getId().equals(targetLog.getTargetName())) {
-                temp = stackPane;
-                ((Circle) temp.getChildren().get(0)).fillProperty().setValue(Color.ORANGE);
-                if (!inProcessListItems.contains(temp)) {
-                    obsInProcessList.add(temp);
-                }
-                break;
-            }
-        }
-        obsWaitingList.remove(temp);
-    }
-
-    private void handelListInCaseOfStart(ProgressDto targetLog, StackPane temp) {
-        for (StackPane stackPane : obsFrozenList) {
-            if (stackPane.getId().equals(targetLog.getTargetName())) {
-                temp = stackPane;
-                switch (targetLog.getTargetState()) {
-                    case WAITING:
-                        if (!waitingListItems.contains(temp)) {
-                            ((Circle) temp.getChildren().get(0)).fillProperty().setValue(Color.PINK);
-                            obsWaitingList.add(temp);
-                        }
-                        break;
-                    case SKIPPED:
-                        if (!skippedListItems.contains(temp)) {
-                            ((Circle) temp.getChildren().get(0)).fillProperty().setValue(Color.GRAY);
-                            obsSkippedList.add(temp);
-                        }
-                        break;
-                }
-                break;
-            }
-        }
-        obsFrozenList.remove(temp);
-    }
-
-    private void handelListInCaseOfFinished(ProgressDto targetLog, StackPane temp) {
-        for (StackPane stackPane : obsInProcessList) {
-            if (stackPane.getId().equals(targetLog.getTargetName())) {
-                temp = stackPane;
-                switch (targetLog.getTargetState()) {
-                    case FAILURE:
-                        if (!failedListItems.contains(temp)) {
-                            ((Circle) temp.getChildren().get(0)).fillProperty().setValue(RED);
-                            obsFailedList.add(temp);
-                        }
-                        break;
-                    case WARNING:
-                    case SUCCESS:
-                        if (!finishedListItems.contains(temp)) {
-                            ((Circle) temp.getChildren().get(0)).fillProperty().setValue(
-                                    targetLog.getTargetState() == TargetState.WARNING ?
-                                            Color.YELLOW :
-                                            Color.GREEN);
-                            obsFinishedList.add(temp);
-                        }
-                        break;
-                }
-                break;
-            }
-        }
-        obsInProcessList.remove(temp);
-    }
-
-
     private void showSummaryWindow(long time) {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
@@ -679,39 +571,6 @@ public class TaskViewController {
         } catch (IOException e) {
             //
         }
-    }
-
-    public void resetAllLists(boolean isIncremental) {
-        if (isIncremental) {
-            obsFrozenList.clear();
-            obsWaitingList.clear();
-
-            obsFrozenList.addAll(obsSkippedList);
-            obsSkippedList.clear();
-
-            obsFrozenList.addAll(obsFailedList);
-            obsFailedList.clear();
-
-            obsFinishedList.clear();
-        } else {
-            obsFrozenList.clear();
-
-            obsFrozenList.addAll(obsSkippedList);
-            obsSkippedList.clear();
-
-            obsFrozenList.addAll(obsFinishedList);
-            obsFinishedList.clear();
-
-            obsFrozenList.addAll(obsFailedList);
-            obsFailedList.clear();
-        }
-        allFinishedTasks.clear();
-        totalNumberOfTargets = obsFrozenList.size();
-        progressBar.progressProperty().setValue(0);
-    }
-
-    public void disablePlayPauseBtn() {
-        playPauseBtn.setDisable(true);
     }
 
     public void setPrimaryStage(Stage primaryStage) {
