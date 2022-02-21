@@ -276,4 +276,12 @@ public class GPUPManager {
     public TaskArgs getTaskArgs(String taskName) {
         return tasks.get(taskName).getTaskArgs();
     }
+
+    public List<WorkerTaskInfoDto> getWorkerTaskInfo(String userName) {
+        List<WorkerTaskInfoDto> workerTaskInfoDtos = new ArrayList<>();
+        for (String s : username2User.get(userName).getTasksImIn()) {
+            workerTaskInfoDtos.add(tasks.get(s).getWorkerTaskinfo());
+        }
+        return workerTaskInfoDtos;
+    }
 }

@@ -5,6 +5,7 @@ import argumentsDTO.CommonEnums.*;
 import dataTransferObjects.GraphInfoDTO;
 import dataTransferObjects.TaskInfoDTO;
 import dataTransferObjects.UpdateListsDTO;
+import dataTransferObjects.WorkerTaskInfoDto;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -84,6 +85,7 @@ public class TaskManager {
                         setStatus(TaskStatus.FINISHED);
                     break;
                 }
+                target.targetPrice = task instanceof SimulationTask ? simulationPrice : compilationPrice;
                 l.add(target);
             }
         }
@@ -171,5 +173,14 @@ public class TaskManager {
     public int finishWork(TaskTarget target, accumulatorForWritingToFile log) {
         task.finishWorkOnTarget(target, log);
         return simulationPrice == -1 ? compilationPrice : simulationPrice;
+    }
+
+    public WorkerTaskInfoDto getWorkerTaskinfo() {
+        WorkerTaskInfoDto workerTaskInfoDto = new WorkerTaskInfoDto();
+        workerTaskInfoDto.setTaskName(taskName);
+        workerTaskInfoDto.setEnrolledUsers(registeredUsers.size());
+        workerTaskInfoDto.setTaskProgress(task.getProgress());
+        workerTaskInfoDto.setTargetPrice(simulationPrice == -1 ? compilationPrice : simulationPrice);
+        return workerTaskInfoDto;
     }
 }

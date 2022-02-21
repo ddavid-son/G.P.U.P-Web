@@ -1,16 +1,17 @@
 package app.engine;
 
+import app.DataCenterController;
 import app.Utils.FXUtil;
 import app.Utils.HttpUtil;
 import app.WorkerDashboardController;
 import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
 import com.google.gson.reflect.TypeToken;
-import com.sun.java.swing.plaf.windows.WindowsBorders;
+import dataTransferObjects.WorkHistoryDto;
+import javafx.application.Platform;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 import resources.Constants;
-import sun.security.krb5.SCDynamicStoreConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.io.InputStreamReader;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.StreamSupport;
+import java.util.stream.Collectors;
 
 public class TargetEngine {
 
@@ -37,9 +38,40 @@ public class TargetEngine {
     private final List<TaskTarget> finishedWork = new ArrayList<>();
     private final List<accumulatorForWritingToFile> finishedLogs = new ArrayList<>();
 
+    private List<WorkHistoryDto> workHistoryDto = new ArrayList<>();
+    private final List<TaskTarget> inProcessTargets = new ArrayList<>();
+
     String logs;
     String targets;
+    private DataCenterController dataCenterController;
 
+    public int getActiveThreads() {
+        return activeThreads;
+    }
+
+    public void setDataCenterController(DataCenterController dataCenterController) {
+        this.dataCenterController = dataCenterController;
+    }
+
+    public int getCountTargetDoneByMe(String taskName) {
+        int count = 0;
+        for (TaskTarget t : finishedWork) {
+            if (t.taskName.equals(taskName))
+                count++;
+        }
+        return count;
+    }
+
+    public synchronized List<WorkHistoryDto> getWorkHistoryDto() {
+        workHistoryDto.clear();
+        for (int i = 0; i < lastPushedIndex; i++) {
+            workHistoryDto.add(new WorkHistoryDto(finishedWork.get(i), finishedLogs.get(i)));
+        }
+        for (TaskTarget t : inProcessTargets) {
+            workHistoryDto.add(new WorkHistoryDto(t, new accumulatorForWritingToFile()));
+        }
+        return workHistoryDto;
+    }
 
     // ----------------------------------------- server call management ----------------------------------------------//
     // fetching schedule
@@ -73,6 +105,10 @@ public class TargetEngine {
                     if (response.isSuccessful()) {
                         List<TaskTarget> work = HttpUtil.GSON.fromJson(res, new TypeToken<List<TaskTarget>>() {
                         }.getType());
+
+                        synchronized (this) {
+                            inProcessTargets.addAll(work);
+                        }
                         updateNumberOfActiveThreads(work.size());
                         addTasksToQueue(work);
                     } else {
@@ -136,13 +172,14 @@ public class TargetEngine {
         if (newIndex == lastPushedIndex)
             return null;
 
-        synchronized (this) {
+        synchronized (this) { // not really necessary I think
             logs = HttpUtil.GSON.toJson(finishedLogs.subList(lastPushedIndex, newIndex),
                     new TypeToken<List<accumulatorForWritingToFile>>() {
                     }.getType());
             targets = HttpUtil.GSON.toJson(finishedWork.subList(lastPushedIndex, newIndex),
                     new TypeToken<List<TaskTarget>>() {
                     }.getType());
+            inProcessTargets.removeAll(finishedWork.subList(lastPushedIndex, newIndex));
         }
 
         RequestBody b = RequestBody.create(logs + "~~~" + targets, MediaType.parse("application/json"));
@@ -187,6 +224,8 @@ public class TargetEngine {
 
     public synchronized void updateNumberOfActiveThreads(int delta) {
         activeThreads += delta;
+        if (dataCenterController != null)
+            dataCenterController.updateNumberOfThreads(activeThreads);
     }
 
     public synchronized int getFreeThreads() {

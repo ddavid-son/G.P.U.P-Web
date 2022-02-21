@@ -15,6 +15,15 @@ public class TaskTarget implements Serializable {
     public final String name;
     public String workerName;
     public TaskType taskType;
+    public int targetPrice;
+
+    public int getTargetPrice() {
+        return targetPrice;
+    }
+
+    public void setTargetPrice(int targetPrice) {
+        this.targetPrice = targetPrice;
+    }
 
     public TaskType getTaskType() {
         return taskType;

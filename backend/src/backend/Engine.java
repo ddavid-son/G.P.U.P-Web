@@ -17,9 +17,9 @@ import java.util.function.Consumer;
 
 
 public interface Engine extends Serializable {
-    void pauseTask();
+    // void pauseTask();
 
-    void resumeTask();
+    // void resumeTask();
 
     //int getMaxThreadCount();
 

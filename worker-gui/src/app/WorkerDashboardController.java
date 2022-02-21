@@ -14,6 +14,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -25,10 +28,12 @@ import resources.Constants;
 import argumentsDTO.CommonEnums.*;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import static app.Utils.FXUtil.handleErrors;
 
@@ -102,19 +107,56 @@ public class WorkerDashboardController {
     @FXML
     private Button joinTaskBtn;
 
+    @FXML
+    private Button goToDataCenterBtn;
+
+    @FXML
+    private ListView<String> taskNameList = new ListView<>();
+
+    private Scene dataCenterView;
+
     private int cash = 0;
     private String workerName;
     private Stage primaryStage;
     private int numberOfThreads;
     private TargetEngine engine;
+    ObservableList<TaskInfoDTO> taskInfoObs;
     private final Timer timer = new Timer();
     private final List<String> tasksImIn = new ArrayList<>();
+    ObservableList<String> tasksName = FXCollections.observableArrayList();
     private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
 
+    public String getWorkerName() {
+        return workerName;
+    }
+
+    public int getNumberOfThreads() {
+        return numberOfThreads;
+    }
 
     @FXML
-    void onLoadGraphBtnClicked(ActionEvent event) {
+    void onGoToDataCenterBtnClicked(ActionEvent event) {
+        if (dataCenterView == null) {
+            loadFxml();
+        }
 
+        primaryStage.setScene(dataCenterView);
+    }
+
+    private void loadFxml() {
+        try {
+            URL url = getClass().getResource("/resources/fxml/dataCenterController.fxml");
+            FXMLLoader fxmlLoader = new FXMLLoader(url);
+            fxmlLoader.setLocation(url);
+            Parent root = fxmlLoader.load();
+            Scene scene = new Scene(root);
+            DataCenterController dataCenterController = fxmlLoader.getController();
+
+            dataCenterController.setDataCenter(primaryStage, this, engine);
+            dataCenterView = scene;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     // init
@@ -129,7 +171,9 @@ public class WorkerDashboardController {
 
         joinTaskBtn.setGraphic(FXUtil.getIcon("/plusIcon.png", 24));
         leaveTaskBtn.setGraphic(FXUtil.getIcon("/minusIcon.png", 24));
+        goToDataCenterBtn.setGraphic(FXUtil.getIcon("/taskInfoCenter.png", 24));
 
+        this.taskNameList.setItems(tasksName);
         scheduleTasksFetching();
     }
 
@@ -179,7 +223,14 @@ public class WorkerDashboardController {
     }
 
     private void updateTaskPeekTable(List<TaskInfoDTO> taskInfoDTO) {
-        ObservableList<TaskInfoDTO> taskInfoObs = FXCollections.observableArrayList(taskInfoDTO);
+        taskInfoObs = FXCollections.observableArrayList(taskInfoDTO);
+
+        if (tasksName.size() != taskInfoObs.size()) {
+            tasksName.setAll(taskInfoObs.stream()
+                    .map(TaskInfoDTO::getTaskName)
+                    .collect(Collectors.toList())
+            );
+        }
 
         taskNameCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getTaskName())
@@ -222,8 +273,7 @@ public class WorkerDashboardController {
     }
     // init
 
-
-    // ------------------------------------------------- task ------------------------------------------------//
+    // ------------------------------------------------- task update ------------------------------------------------//
     private void taskRegistration(String taskName, boolean joinOrLeave) {
 
         if (assertTaskCredentials(taskName, joinOrLeave)) {
@@ -282,16 +332,16 @@ public class WorkerDashboardController {
 
     @FXML
     void onJoinTaskBtnClicked(ActionEvent event) {
-        if (taskPeekTable.getSelectionModel().getSelectedItem() != null)
-            taskRegistration(taskPeekTable.getSelectionModel().getSelectedItem().getTaskName(), true);
+        if (taskNameList.getSelectionModel().getSelectedItem() != null)
+            taskRegistration(taskNameList.getSelectionModel().getSelectedItem(), true);
         else
             resLogLabel.setText("Please select a task from the table first");
     }
 
     @FXML
     void onLeaveTaskBtnClicked(ActionEvent event) {
-        if (taskPeekTable.getSelectionModel().getSelectedItem() != null)
-            taskRegistration(taskPeekTable.getSelectionModel().getSelectedItem().getTaskName(), false);
+        if (taskNameList.getSelectionModel().getSelectedItem() != null)
+            taskRegistration(taskNameList.getSelectionModel().getSelectedItem(), false);
         else
             resLogLabel.setText("Please select a task from the table first");
     }
@@ -300,10 +350,7 @@ public class WorkerDashboardController {
         cash += earned;
         Platform.runLater(() -> walletLabel.setText("Wallet: " + cash));
     }
-    // ------------------------------------------------- task ------------------------------------------------//
 
-
-    // ------------------------------------------------- task update ------------------------------------------------//
     private void scheduleTasksFetching() {
         timer.schedule(new TimerTask() {
             @Override
@@ -312,28 +359,6 @@ public class WorkerDashboardController {
             }
         }, 0, Constants.REFRESH_RATE);
 
-    }
-
-    private void fetchTasksFromServer() {
-        String finalUrl = Constants.FULL_SERVER_PATH + "/get-task-names";
-        HttpUtil.runAsync(finalUrl, new Callback() {
-            @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                handleErrors(e, "", "Failed to fetch tasks names");
-            }
-
-            @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String s = response.body().string();
-                if (response.isSuccessful()) {
-                    List<String> taskNames =
-                            HttpUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
-                            }.getType());
-                    if (taskNames.size() != taskHeaderTable.getItems().size())
-                        Platform.runLater(() -> taskHeaderTable.getItems().setAll(taskNames));
-                }
-            }
-        });
     }
     // ------------------------------------------------- task update ------------------------------------------------//
 
@@ -381,5 +406,4 @@ public class WorkerDashboardController {
         });
     }
     // ------------------------------------------------- users update ------------------------------------------------//
-
 }

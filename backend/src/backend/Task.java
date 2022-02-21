@@ -41,18 +41,6 @@ public abstract class Task implements Serializable {
         return result;
     }
 
-
-    public void pauseTask() {
-    }
-
-    public void resumeTask() {
-
-    }
-
-    private void pauseThreadTask() {
-
-    }
-
     public UpdateListsDTO getUpdateListsDTO(int listedUsers) {
         synchronized (lockForUpdateTables) {
 
@@ -332,5 +320,11 @@ public abstract class Task implements Serializable {
     abstract void updateMembersAccordingToTask(TaskArgs taskArgs);
 
     abstract void finishWorkOnTarget(TaskTarget targetToExecute, accumulatorForWritingToFile resOfTargetTaskRun);
+
+    public synchronized double getProgress() {
+        double done = graph.size() - (frozenSet.size() + waitingSet.size() + inProcessSet.size());
+        double total = graph.size();
+        return done / total;
+    }
     // ----------------------------------------- abstract Methods --------------------------------------------------- //
 }

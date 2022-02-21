@@ -3,9 +3,11 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -21,7 +23,7 @@
             <ColumnConstraints hgrow="SOMETIMES" />
             <ColumnConstraints hgrow="SOMETIMES" prefWidth="100.0" />
             <ColumnConstraints hgrow="SOMETIMES" />
-          <ColumnConstraints hgrow="SOMETIMES" prefWidth="100.0" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="300.0" prefWidth="100.0" />
             <ColumnConstraints hgrow="SOMETIMES" maxWidth="20.0" minWidth="20.0" prefWidth="20.0" />
         </columnConstraints>
         <rowConstraints>
@@ -74,11 +76,20 @@
                   <Insets />
                </GridPane.margin>
             </TableView>
-            <Label fx:id="loggedInAs" text="Hello " GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="TOP">
-               <font>
-                  <Font size="18.0" />
-               </font>
-            </Label>
+            <HBox spacing="20.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.halignment="LEFT" GridPane.rowIndex="1" GridPane.valignment="TOP">
+               <children>
+                  <Button fx:id="goToDataCenterBtn" mnemonicParsing="false" onAction="#onGoToDataCenterBtnClicked">
+                     <tooltip>
+                        <Tooltip text="Tasks Info Center" />
+                     </tooltip>
+                  </Button>
+                  <Label fx:id="loggedInAs" text="Hello ">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+               </children>
+            </HBox>
             <Label fx:id="walletLabel" text="Wallet: 0" GridPane.columnIndex="5" GridPane.halignment="RIGHT" GridPane.rowIndex="1" GridPane.valignment="TOP">
                <GridPane.margin>
                   <Insets right="10.0" top="10.0" />
@@ -89,21 +100,24 @@
                   <Insets top="5.0" />
                </GridPane.margin>
             </Label>
-            <HBox fx:id="regHBox" alignment="CENTER" spacing="10.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="5" GridPane.valignment="CENTER">
-               <children>
-                  <Button fx:id="leaveTaskBtn" mnemonicParsing="false" onAction="#onLeaveTaskBtnClicked">
-                     <HBox.margin>
-                        <Insets bottom="2.0" />
-                     </HBox.margin></Button>
-                  <Button fx:id="joinTaskBtn" mnemonicParsing="false" onAction="#onJoinTaskBtnClicked">
-                     <HBox.margin>
-                        <Insets bottom="2.0" />
-                     </HBox.margin></Button>
-               </children>
-               <opaqueInsets>
-                  <Insets />
-               </opaqueInsets>
-            </HBox>
+            <Button fx:id="leaveTaskBtn" mnemonicParsing="false" onAction="#onLeaveTaskBtnClicked" GridPane.columnIndex="3" GridPane.halignment="LEFT" GridPane.rowIndex="5" GridPane.valignment="TOP">
+               <GridPane.margin>
+                  <Insets left="1.0" top="45.0" />
+               </GridPane.margin>
+               <tooltip>
+                  <Tooltip text="Leave Selected Task" />
+               </tooltip>
+            </Button>
+            <Button fx:id="joinTaskBtn" mnemonicParsing="false" onAction="#onJoinTaskBtnClicked" GridPane.columnIndex="3" GridPane.halignment="LEFT" GridPane.rowIndex="5" GridPane.valignment="TOP">
+               <GridPane.margin>
+                  <Insets left="1.0" />
+               </GridPane.margin>
+               <tooltip>
+                  <Tooltip text="Join Selected Task" />
+               </tooltip>
+            </Button>
+            <ListView fx:id="taskNameList" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="5" />
+            <Label text="tasks" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="4" GridPane.valignment="BOTTOM" />
          </children>
       </GridPane>
    </content>
