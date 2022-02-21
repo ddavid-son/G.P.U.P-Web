@@ -91,7 +91,7 @@ public class CircleDisplayController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String[] s = response.body().string().split("~~~");
+                String[] s = response.body().string().split("~~~");//13
                 if (response.code() != 200) {
                     handleErrors(null, response.message(), "Couldn't fetch circle data");
                 } else {

@@ -101,7 +101,7 @@ public class TargetEngine {
 
                 @Override
                 public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                    String res = response.body().string();
+                    String res = response.body().string();//6
                     if (response.isSuccessful()) {
                         List<TaskTarget> work = HttpUtil.GSON.fromJson(res, new TypeToken<List<TaskTarget>>() {
                         }.getType());

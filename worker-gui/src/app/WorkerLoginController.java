@@ -72,16 +72,9 @@ public class WorkerLoginController {
             }
 
             @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();//3
                 if (response.code() != 200) {
-                    System.out.println(response.code());
-                    try {
-                        System.out.println(response.body().string());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    System.out.println(call);
-                    System.out.println(call.request().toString());
                     FXUtil.handleErrors(
                             null,
                             "couldn't log in due to authentication errors pleas try again later",

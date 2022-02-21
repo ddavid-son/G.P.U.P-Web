@@ -154,7 +154,7 @@ public class ControlPanelController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                if (response.code() != 200) {
+                if (response.code() != 200) {//14
                     String errorMessage = response.body().string();
                     handleErrors(null, errorMessage, "Error fetching execution data");
                 } else {
@@ -213,12 +213,12 @@ public class ControlPanelController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();//7
                 if (response.code() != 200) {
                     handleErrors(null,
                             "Could not acquire targets, please try again",
                             "Error fetching targets");
                 } else {
-                    String s = response.body().string();
                     Platform.runLater(() ->
                             allTargetsConsumer.accept(HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
                             }.getType())));
@@ -326,9 +326,8 @@ public class ControlPanelController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String responseBody = response.body().string();
+                String responseBody = response.body().string();//19
                 if (!response.isSuccessful()) {
-                    System.out.println(responseBody);
                     handleErrors(null, responseBody, "Error! could not create the task");
                 } else {
                     // update label with success info

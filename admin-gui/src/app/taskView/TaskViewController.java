@@ -182,7 +182,7 @@ public class TaskViewController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String s = response.body().string();
+                String s = response.body().string();//8
                 if (response.isSuccessful()) {
                     setPlayPauseBtnStatuse(taskStatus.toString());
                 } else {
@@ -242,7 +242,7 @@ public class TaskViewController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String responseBody = response.body().string();
+                String responseBody = response.body().string();//23
                 if (response.isSuccessful()) {
                     updateLists(
                             HttpClientUtil.GSON.fromJson(responseBody, new TypeToken<UpdateListsDTO>() {
@@ -446,7 +446,7 @@ public class TaskViewController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String res = response.body().string();
+                String res = response.body().string();//21
                 if (response.isSuccessful()) {
                     publishToUser(
                             HttpClientUtil.GSON.fromJson(res, new TypeToken<List<String>>() {
@@ -532,7 +532,7 @@ public class TaskViewController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String res = response.body().string();
+                String res = response.body().string();//17
                 Platform.runLater(() -> {
                     creatingTaskStatuse.setText(res);
                     if (response.isSuccessful()) {

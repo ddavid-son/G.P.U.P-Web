@@ -83,7 +83,7 @@ public class RelatedViewController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String s = response.body().string();
+                String s = response.body().string();//12
                 if (response.code() != 200) {
                     handleErrors(null, s, "Error fetching all Paths");
                 } else {

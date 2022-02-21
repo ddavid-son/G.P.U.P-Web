@@ -154,7 +154,7 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String[] responseBody = response.body().string().split("~~~");
+                String[] responseBody = response.body().string().split("~~~");//15
                 if (response.isSuccessful()) {
                     Type type;
                     if ("SIMULATION".equals(responseBody[0])) {
@@ -252,7 +252,7 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String s = response.body().string();
+                String s = response.body().string();//22
                 if (response.isSuccessful()) {
                     List<String> taskNames =
                             HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
@@ -286,7 +286,7 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, Response response) throws IOException {
-                String responseString = response.body().string();
+                String responseString = response.body().string();//18
                 if (response.code() != 200) {
                     handleErrors(
                             null,
@@ -325,7 +325,7 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String s = response.body().string();
+                String s = response.body().string();//10
                 if (response.isSuccessful()) {
                     List<String> graphNames =
                             HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
@@ -359,7 +359,7 @@ public class DashBoardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String s = response.body().string();
+                String s = response.body().string();//16
                 if (response.code() == 200) {
                     updateUsersList(
                             HttpClientUtil.GSON.fromJson(s, new TypeToken<List<UserDto>>() {
@@ -398,7 +398,7 @@ public class DashBoardController {
 
                 @Override
                 public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                    String errorMessage = response.body().string();
+                    String errorMessage = response.body().string();//20
                     if (response.code() != 200) {
                         handleErrors(null, errorMessage, "Error loading graph");
                     } else {

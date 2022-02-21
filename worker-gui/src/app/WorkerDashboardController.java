@@ -192,7 +192,7 @@ public class WorkerDashboardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String responseBody = response.body().string();
+                String responseBody = response.body().string();// 1
                 if (response.isSuccessful()) {
                     List<TaskInfoDTO> taskInfoDTOList = HttpUtil.GSON.fromJson(responseBody, new TypeToken<List<TaskInfoDTO>>() {
                     }.getType());
@@ -299,7 +299,7 @@ public class WorkerDashboardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String responseBody = response.body().string();
+                String responseBody = response.body().string();//4
                 if (response.isSuccessful()) {
                     Platform.runLater(() -> resLogLabel.setText("Successfully " + (joinOrLeave ? "joined" : "left") + " task " + taskName));
                     updateWorkFetching(joinOrLeave, taskName);
@@ -383,7 +383,7 @@ public class WorkerDashboardController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                String s = response.body().string();
+                String s = response.body().string();//2
                 if (response.code() == 200) {
                     updateUsersList(
                             HttpUtil.GSON.fromJson(

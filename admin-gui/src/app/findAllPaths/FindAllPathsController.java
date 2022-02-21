@@ -111,11 +111,10 @@ public class FindAllPathsController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();//9
                 if (response.code() != 200) {
-                    String s = response.body().string();
                     handleErrors(null, s, "Error fetching all Paths");
                 } else {
-                    String s = response.body().string();
                     updateAllPathsView(
                             HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
                             }.getType())
