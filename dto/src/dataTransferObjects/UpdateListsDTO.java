@@ -15,6 +15,7 @@ public class UpdateListsDTO {
     public Set<String> inProcessSet = new HashSet<>();
     public Set<String> waitingSet = new HashSet<>();
     public Set<String> failedSet = new HashSet<>();
+    public List<String> taskLogs = new ArrayList<>();
     public int registeredUsers;
 
     public void setAll(Set<String> frozenSet, Set<String> warningSet, Set<String> skippedSet,
@@ -41,6 +42,22 @@ public class UpdateListsDTO {
 
     public boolean taskEnded() {
         return frozenSet.isEmpty() && inProcessSet.isEmpty() && waitingSet.isEmpty();
+    }
+
+    public void addTaskLog(String log) {
+        taskLogs.add(log);
+    }
+
+    public void addTaskLogs(List<String> logs) {
+        taskLogs.addAll(logs);
+    }
+
+    public void setTaskLogs(List<String> taskLogs) {
+        this.taskLogs = taskLogs;
+    }
+
+    public List<String> getTaskLogs() {
+        return taskLogs;
     }
 
     public long getStartTime() {

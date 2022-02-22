@@ -21,6 +21,11 @@ public class accumulatorForWritingToFile implements Serializable {
     public accumulatorForWritingToFile() {
     }
 
+
+    public String getLogsAsString() {
+        return String.join("\n", outPutData);
+    }
+
     public accumulatorForWritingToFile(String data) {
         outPutData.add(data);
     }

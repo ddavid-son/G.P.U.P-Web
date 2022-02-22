@@ -161,9 +161,14 @@ public class TaskManager {
         registeredUsers.remove(workerName);
     }
 
+
     public UpdateListsDTO getUpdateListsDTO() {
 
         return task.getUpdateListsDTO(registeredUsers.size());
+    }
+
+    public List<accumulatorForWritingToFile> getLogsDelta(int lastVisitedLog) {
+        return task.fetchDeltaLogs(lastVisitedLog);
     }
 
     public List<String> getTargetClickedInfo(String targetName, TargetState targetState) {

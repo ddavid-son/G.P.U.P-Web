@@ -275,6 +275,7 @@ public class TaskViewController {
                 timerForListUpdates.cancel();
                 showSummaryWindow(updateListsDTO.getDuration());
             }
+            updateListsDTO.getTaskLogs().forEach(logListViw::appendText);
         });
     }
 

@@ -1,12 +1,14 @@
 package app.Utils;
 
+import javafx.application.Platform;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public class FXUtil {
     public static void handleErrors(Exception e, String bodyMessage, String headerMessage) {
-      /*  Platform.runLater(() -> {
+        Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error occurred");
             alert.setHeaderText(headerMessage);
@@ -16,8 +18,7 @@ public class FXUtil {
                 alert.setContentText(bodyMessage);
             }
             alert.showAndWait();
-        });*/
-        System.out.println("ji");
+        });
     }
 
     public static Node getIcon(String resourceName, int size) {

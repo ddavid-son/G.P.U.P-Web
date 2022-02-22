@@ -7,6 +7,7 @@ import argumentsDTO.TaskTarget;
 import argumentsDTO.accumulatorForWritingToFile;
 import dataTransferObjects.*;
 import javafx.scene.paint.Color;
+import sun.rmi.runtime.Log;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -245,6 +246,12 @@ public class GPUPManager {
         return TargetState.SKIPPED;
     }
 
+    public List<String> getLogs(int lastVisitedLog, String taskName) {
+        return tasks.get(taskName).getLogsDelta(lastVisitedLog).stream()
+                .map(accumulatorForWritingToFile::getLogsAsString)
+                .collect(Collectors.toList());
+    }
+
 
     // ex2 addons
     public List<String> getCircle(String engineName, String targetName) {
@@ -270,7 +277,9 @@ public class GPUPManager {
     }
 
     public UpdateListsDTO getUpdateListsDTO(String taskName) {
-        return tasks.get(taskName).getUpdateListsDTO();
+        UpdateListsDTO t = tasks.get(taskName).getUpdateListsDTO();
+        t.setTaskLogs(getLogs(0, taskName));
+        return t;
     }
 
     public TaskArgs getTaskArgs(String taskName) {

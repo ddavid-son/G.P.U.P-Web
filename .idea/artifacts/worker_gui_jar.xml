@@ -1,0 +1,17 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="worker-gui:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/worker_gui_jar</output-path>
+    <root id="root">
+      <element id="archive" name="worker-gui.jar">
+        <element id="module-output" name="worker-gui" />
+        <element id="module-output" name="dto" />
+        <element id="module-output" name="common" />
+      </element>
+      <element id="file-copy" path="$USER_HOME$/Desktop/okHttp/okio-2.8.0.jar" />
+      <element id="file-copy" path="$USER_HOME$/Desktop/okHttp/annotations-13.0.jar" />
+      <element id="file-copy" path="$USER_HOME$/Desktop/okHttp/okhttp-4.9.1.jar" />
+      <element id="file-copy" path="$USER_HOME$/Desktop/okHttp/kotlin-stdlib-1.4.10.jar" />
+      <element id="file-copy" path="$USER_HOME$/Desktop/gson-2.1.jar" />
+    </root>
+  </artifact>
+</component>

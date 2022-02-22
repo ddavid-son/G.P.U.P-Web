@@ -24,6 +24,7 @@ public abstract class Task implements Serializable {
     final String WORKING_DIR = "c:\\gpup-working-dir";
     Consumer<accumulatorForWritingToFile> finishedTargetLog;
     List<accumulatorForWritingToFile> logData = new LinkedList<>();
+    final Object lockForLogsUpdate = new Object();
 
     public Set<String> frozenSet = new HashSet<>();
     public Set<String> warningSet = new HashSet<>();
@@ -94,6 +95,10 @@ public abstract class Task implements Serializable {
             dst.add(targetName);
         }
     }
+
+    List<accumulatorForWritingToFile> fetchDeltaLogs(int lastVisitedIndex) {
+        return logData.subList(lastVisitedIndex, logData.size());
+    }
     // ---------------------------------------------- ctor and utils ------------------------------------------------ //
 
 
@@ -101,10 +106,6 @@ public abstract class Task implements Serializable {
     public void activateRun() {
         startTime = System.currentTimeMillis();
         serverFullPath = createDirectoryToLogData(startTime);
-    }
-
-    public boolean isTaskFinished() {
-        return waitingList.isEmpty();
     }
 
     public TaskTarget getWork() {
@@ -122,39 +123,6 @@ public abstract class Task implements Serializable {
         targetToExecute.enterProcess = System.currentTimeMillis();
         moveTargetsBetweenSets(waitingSet, inProcessSet, targetToExecute.name);
         return targetToExecute;
-    }
-
-    public long getWaitingStartTime(String targetName) {
-
-        return graph.get(targetName).enterWaiting;
-    }
-
-    public long getProcessStartTime(String targetName) {
-
-        return graph.get(targetName).enterProcess;
-    }
-
-/*    public List<String> getFailedOrSkipped(String targetName) {
-        return graph.get(targetName).nameOfFailedOrSkippedDependencies;
-    }
-
-    public ProgressDto getInfoAboutTargetInExecution(String targetName) {
-        return new ProgressDto(
-                "",
-                graph.get(targetName).name,
-                graph.get(targetName).state,
-                graph.get(targetName).enterWaiting,
-                graph.get(targetName).enterProcess,
-                String.join(",", graph.get(targetName).nameOfFailedOrSkippedDependencies),
-                String.join(",", graph.get(targetName).dependsOn)
-        );
-    }*/
-
-    private String getNamesToRunLater(TaskTarget targetToExecute, accumulatorForWritingToFile finalResOfTargetTaskRun) {
-        if (targetToExecute.state == TargetState.FAILURE) {
-            return targetToExecute.name + "," + String.join(",", finalResOfTargetTaskRun.SkippedTargets);
-        }
-        return targetToExecute.name;
     }
 
     private void setConsumers(Consumer<accumulatorForWritingToFile> finishedTargetLog, Consumer<ProgressDto> finishedTarget) {
@@ -236,7 +204,6 @@ public abstract class Task implements Serializable {
             if (graph.get(neighbour).dependsOn.isEmpty()) {
                 if (!graph.get(neighbour).state.equals(TargetState.SKIPPED) &&
                         !waitingList.contains(neighbour)) {
-                    //Platform.runLater(() -> finishedTarget.accept(new ProgressDto(neighbour, TargetState.WAITING)));
                     waitingList.add(neighbour);
                     moveTargetsBetweenSets(frozenSet, waitingSet, neighbour);
                     graph.get(neighbour).state = TargetState.WAITING;
@@ -278,7 +245,6 @@ public abstract class Task implements Serializable {
                 updateOpenTargets(targetToExecute, resOfTargetTaskRun);
                 break;
         }
-        System.out.println(resOfTargetTaskRun);
     }
 
     public List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState) {
