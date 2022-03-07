@@ -1,6 +1,6 @@
 # <center>G.P.U.P Web Client-Server Application</center>
 
-<center><img  src="https://i.ibb.co/6m4xm80/DD.png" alt="Gpup - logo" border="0"> </center>
+<center><img  src="https://i.ibb.co/6m4xm80/DD.png" alt="Gpup - logo" border="0"></center>
 
 ***
 ### Table Of Contents
