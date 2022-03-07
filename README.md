@@ -1,5 +1,17 @@
-# GPUP-WEB
-gpup, client-server web edition using servlets 
+# G.P.U.P Web Client-Server Application
+
+G.P.U.P - Generic Platform for Utilizing Processes.
+ The platform enables the Admin to model set of dependencies between components(tasks) and handle them efficiently.
+ G.P.U.P capabilties includes: 
+ - Insights: The platform (Admin app) enables to extract various insights out of the ‘graph’ of tasks such as:
+	- routes between nodes to see determin and see the relation between them.
+	- circles, helps in finding meutual dependencies and get the specific task that is affected by them
+	- transitive dependencies enables the user to see all the tasks that this specific target dependes on or all the targets that dependes on this taks, both directly and transitivly.
+	
+- Execution: The platform enables running various tasks on the graph’s nodes. It follows the Open-Close principle and can be extended with various tasks in the future.
+Tasks can be, for example: compilation task ; testing task.
+Execution is done in parallel to maximize efficiency of processing, Execution can be done on part of the graph, and/or only on the failed node from former execution etc.
+o Distribution: The platform architecture enables distributed (remote) workers to connect to it and execute work on their private resources.
 
 
 # Read Me Template
