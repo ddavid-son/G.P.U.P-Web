@@ -1,7 +1,9 @@
 # <p align="center">G.P.U.P Web Client-Server Application</p>
 
 <p align="center"><img src="https://i.ibb.co/6m4xm80/DD.png" alt="Gpup - logo" border="0"></p>
+
 ***
+
 ### Table Of Contents
 
 - [Description](#description)
