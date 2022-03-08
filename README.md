@@ -33,7 +33,7 @@ The platform architecture enables distributed (remote) workers to connect to it 
     <br />
 	
 - <B>Execution</B> includes few steps: 
-    - <B>Uploading a graph:</B> the admin needs to upload graph to the system(unless he wants to use an existing one from other admins) this step will be done by providing the system with XML file that meets the criteria of the schema provided [here]("www.github.com/ddavid-son/G.P.U.P-Web/blob/main/testing/xmlSchema%20(2).xml").
+    - <B>Uploading a graph:</B> the admin needs to upload graph to the system(unless he wants to use an existing one from other admins) this step will be done by providing the system with XML file that meets the criteria of the schema provided [here]("testing/xmlSchema (2).xml").
     - <B>Creating task can be achieved in 2 ways:</B> 
         - <B>From existing graph:</B> in the graph dashboard, by clicking the create task button the admin will be asked to choose the type of task he wants to create, then provide information to the system accordingly. the admin can choose whether or not he wants to create the task from the entire graph, specific nodes or all nodes that are effected by his selected nodes(depends on or required for them).
         - <B>From existing task:</B> the admin can choose and already existing *finished* task and duplicate it as is(with all its original nodes) or only with the failed and skipped nodes in order to save time. this can be accomplished in the task control center screen.
