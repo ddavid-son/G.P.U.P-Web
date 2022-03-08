@@ -1,6 +1,6 @@
 package backend;
 
-import argumentsDTO.CommonEnums;
+import argumentsDTO.CommonEnums.*;
 import argumentsDTO.ProgressDto;
 import argumentsDTO.TaskArgs;
 import argumentsDTO.accumulatorForWritingToFile;
@@ -17,11 +17,11 @@ import java.util.function.Consumer;
 
 
 public interface Engine extends Serializable {
-    void pauseTask();
+    // void pauseTask();
 
-    void resumeTask();
+    // void resumeTask();
 
-    int getMaxThreadCount();
+    //int getMaxThreadCount();
 
     boolean isGraphAccessible();
 
@@ -35,13 +35,13 @@ public interface Engine extends Serializable {
 
     List<String> getAllTargetNames();
 
-    void writeObjectToFile(String path);
+    //void writeObjectToFile(String path);
 
     void setNumberOfThreads(Integer value);
 
     GraphInfoDTO getGraphInfo();
 
-    void readObjectFromFile(String filePath);
+    //void readObjectFromFile(String filePath);
 
     void xmlFileLoadingHandler(InputStream inputStream);
 
@@ -59,10 +59,12 @@ public interface Engine extends Serializable {
 
     Set<List<String>> findAllPathsBetweenTargets(String start, String end);
 
-    WhatIfDTO getWhatIf(String targetName, CommonEnums.RelationType type);
+    WhatIfDTO getWhatIf(String targetName, RelationType type);
 
-    List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState);
+    //List<String> getInfoAboutTargetInExecution(String targetName, TargetState targetState);
 
-    void runTaskOnGraph(TaskArgs taskArgs, Consumer<accumulatorForWritingToFile> finishedTargetLog,
-                        Consumer<ProgressDto> finishedTarget);
+    List<String> getWhatIf(List<String> targetNames, RelationType relationType);
+
+    TaskManager buildTask(TaskArgs taskArgs, Consumer<accumulatorForWritingToFile> finishedTargetLog,
+                          Consumer<ProgressDto> finishedTarget);
 }

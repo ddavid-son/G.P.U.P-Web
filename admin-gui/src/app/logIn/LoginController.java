@@ -1,6 +1,7 @@
 package app.logIn;
 
 import app.dashboard.DashBoardController;
+import app.util.FXUtils;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -41,7 +42,12 @@ public class LoginController {
     @FXML
     private void loginButtonClicked(ActionEvent event) {
 
-        String userName = userNameTextField.getText();
+        String userName = userNameTextField.getText().trim();
+/*        if (userName.matches(".[0-9]$")) { // todo: need to be tested
+            FXUtils.handleErrors(null, "Please enter name that doesnt end with a digit", "Invalid user name!");
+            return;
+        }*/
+
         if (userName.isEmpty()) {
             errorMessageProperty.set("User name is empty. You can't login with empty user name");
             return;
@@ -66,16 +72,14 @@ public class LoginController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();//11
                 if (response.code() != 200) {
-                    String responseBody = response.body().string();
+                    response.body().close();
                     Platform.runLater(() ->
                             errorMessageProperty.set("Something went wrong: " + responseBody)
                     );
                 } else {
-                    Platform.runLater(() -> {
-                        System.out.println(userName);
-                        switchToDashBoard();
-                    });
+                    Platform.runLater(() -> switchToDashBoard());
                 }
             }
         });
@@ -89,7 +93,8 @@ public class LoginController {
             Parent root = fxmlLoader.load(url.openStream());
             Scene scene = new Scene(root);
             DashBoardController controller = fxmlLoader.getController();
-            controller.setDashBoard();
+            controller.setDashBoard(userNameTextField.getText().replaceAll("[^a-zA-Z0-9]", ""));
+            controller.setDashBoardController(primaryStage);
             primaryStage.setScene(scene);
         } catch (IOException e) {
             e.printStackTrace();

@@ -8,7 +8,7 @@ public class Constants {
     // all the resources/fxml files
     public static final String LOGIN_FXML = "/resources/fxml/Login.fxml";
     public static final String ADMIN_MAIN_SCREEN_FXML = "/resources/fxml/mainScreen.fxml";
-    public static final String DASHBOARD_FXML = "/resources/fxml/dashboard.fxml";
+    public static final String DASHBOARD_FXML = "/resources/fxml/new-worker-dasahboard.fxml";
 
 
     // global constants

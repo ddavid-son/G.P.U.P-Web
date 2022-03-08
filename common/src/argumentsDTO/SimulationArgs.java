@@ -8,9 +8,9 @@ public class SimulationArgs extends TaskArgs {
     private final int sleepTime;
     private final boolean isRandom;
 
-    public SimulationArgs(double successRate, double warningRate, int sleepTime, int numOfThreads,
-                          boolean isRandom, boolean isWhatIf, boolean isIncremental, RelationType relationType) {
-        super(isWhatIf, numOfThreads, CommonEnums.TaskType.SIMULATION, isIncremental, relationType);
+    public SimulationArgs(double successRate, double warningRate, int sleepTime,
+                          boolean isRandom, boolean isWhatIf, RelationType relationType) {
+        super(isWhatIf, TaskType.SIMULATION, relationType);
         this.successRate = successRate;
         this.warningRate = warningRate;
         this.sleepTime = sleepTime;
@@ -31,5 +31,15 @@ public class SimulationArgs extends TaskArgs {
 
     public boolean isRandom() {
         return isRandom;
+    }
+
+    @Override
+    public TaskArgs cloneArgs() {
+        SimulationArgs s = new SimulationArgs(successRate, warningRate, sleepTime, isRandom, isWhatIf, relationType);
+        s.taskName = taskName;
+        s.taskOwner = taskOwner;
+        s.originalGraph = originalGraph;
+        s.targetsSelectedForGraph.addAll(targetsSelectedForGraph);
+        return s;
     }
 }

@@ -1,7 +1,11 @@
 package app.dashboard;
 
 import app.mainScreen.ControlPanelController;
+import app.taskView.TaskViewController;
 import app.util.http.HttpClientUtil;
+import argumentsDTO.CompilationArgs;
+import argumentsDTO.SimulationArgs;
+import argumentsDTO.TaskArgs;
 import com.google.gson.reflect.TypeToken;
 import dataTransferObjects.GraphInfoDTO;
 import dataTransferObjects.UserDto;
@@ -24,7 +28,11 @@ import resources.Constants;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.*;
+
+import static app.util.FXUtils.handleErrors;
 
 public class DashBoardController {
 
@@ -32,7 +40,7 @@ public class DashBoardController {
     private ListView<String> graphListView;
 
     @FXML
-    private ListView<?> pendingWorkListView;
+    private ListView<String> pendingWorkListView;
 
     @FXML
     private TableView<GraphInfoDTO> graphPeekTable;
@@ -80,13 +88,23 @@ public class DashBoardController {
     private Button loadGraphBtn;
 
     @FXML
-    private Button goToGraphBtn;
+    private Label loggedInAs;
 
+    @FXML
+    private ScrollPane dashboardScrollPane;
+
+    private String userName;
     private final Timer timer = new Timer();
+    private ControlPanelController controlPanelController;
+    private Map<String, Scene> taskViews = new HashMap<>();
     private final ObservableList<UserDto> userHistoryObsList = FXCollections.observableArrayList();
+    private Stage primaryStage;
 
     // ---------------------------------------------------- init ---------------------------------------------------- //
-    public void setDashBoard() {
+    public void setDashBoard(String username) {
+
+        loggedInAs.setText("Hello " + username + "!");
+        this.userName = username;
         initUserTable();
         scheduleUsersFetching();
 
@@ -96,7 +114,6 @@ public class DashBoardController {
                 fetchGraphPeekFromServer(newValue);
             }
         });
-
         graphListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 String s = graphListView.getSelectionModel().getSelectedItem();
@@ -105,6 +122,79 @@ public class DashBoardController {
                 }
             }
         });
+
+        pendingWorkListView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                String newValue = pendingWorkListView.getSelectionModel().getSelectedItem();
+                if (newValue != null && !newValue.isEmpty()) {
+                    if (taskViews.containsKey(newValue)) {
+                        switchToTaskView(newValue);
+                    } else {
+                        fetchTaskViewFromServer(newValue);
+                    }
+                }
+            }
+        });
+
+        scheduleTasksFetching();
+    }
+
+    private void fetchTaskViewFromServer(String taskName) {
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/task-view-data")
+                .newBuilder()
+                .addQueryParameter("task-name", taskName)
+                .build()
+                .toString();
+
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Could not fetch task view data");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String[] responseBody = response.body().string().split("~~~");//15
+                if (response.isSuccessful()) {
+                    Type type;
+                    if ("SIMULATION".equals(responseBody[0])) {
+                        type = new TypeToken<SimulationArgs>() {
+                        }.getType();
+                    } else {
+                        type = new TypeToken<CompilationArgs>() {
+                        }.getType();
+                    }
+                    createNewTaskController(taskName, HttpClientUtil.GSON.fromJson(responseBody[1], type));
+                } else {
+                    handleErrors(null, responseBody[0], "Could not fetch task view data");
+                }
+            }
+        });
+    }
+
+    private void createNewTaskController(String taskName, TaskArgs taskArgs) {
+        try {
+            URL url = getClass().getResource("/resources/fxml/TaskView.fxml");
+            FXMLLoader fxmlLoader = new FXMLLoader(url);
+            fxmlLoader.setLocation(url);
+            Parent root = fxmlLoader.load();
+            Scene scene = new Scene(root);
+            TaskViewController taskViewController = fxmlLoader.getController();
+
+            //taskViewController.setAppController(controlPanelController);
+            taskViews.put(taskName, scene);
+            Platform.runLater(() -> {
+                taskViewController.setPrimaryStage(primaryStage);
+                taskViewController.setTaskView(taskArgs);
+                switchToTaskView(taskName);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void switchToTaskView(String taskName) {
+        primaryStage.setScene(taskViews.get(taskName));
     }
 
     private void initUserTable() {
@@ -142,6 +232,40 @@ public class DashBoardController {
     // ---------------------------------------------------- init ---------------------------------------------------- //
 
 
+    // ---------------------------------------------------- init ---------------------------------------------------- //
+    private void scheduleTasksFetching() {
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                fetchTasksFromServer();
+            }
+        }, 0, Constants.REFRESH_RATE);
+    }
+
+    private void fetchTasksFromServer() {
+        String finalUrl = Constants.FULL_SERVER_PATH + "/get-task-names";
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Failed to fetch tasks names");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();//22
+                if (response.isSuccessful()) {
+                    List<String> taskNames =
+                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType());
+                    if (taskNames.size() != pendingWorkListView.getItems().size())
+                        Platform.runLater(() -> pendingWorkListView.getItems().setAll(taskNames));
+                }
+            }
+        });
+    }
+    // ---------------------------------------------------- init ---------------------------------------------------- //
+
+
     // ------------------------------------------------- peek graph ------------------------------------------------- //
     private void fetchGraphPeekFromServer(String selectedGraphName) {
         String url = Constants.FULL_SERVER_PATH + "/graph-peek" + "?graph-name=" + selectedGraphName;
@@ -152,7 +276,7 @@ public class DashBoardController {
 
         Callback cb = new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 handleErrors(
                         e,
                         "",
@@ -161,19 +285,17 @@ public class DashBoardController {
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NotNull Call call, Response response) throws IOException {
+                String responseString = response.body().string();//18
                 if (response.code() != 200) {
                     handleErrors(
                             null,
-                            "Failed to get graph peek data from server, Please try again later",
+                            responseString,
                             "Can't get graph peek data"
                     );
                 } else {
-                    String responseString = response.body().string();
                     GraphInfoDTO graphInfoDTO = HttpClientUtil.GSON.fromJson(responseString, GraphInfoDTO.class);
-                    Platform.runLater(() -> {
-                        initGraphPeekTable(graphInfoDTO);
-                    });
+                    Platform.runLater(() -> initGraphPeekTable(graphInfoDTO));
                 }
             }
         };
@@ -197,19 +319,19 @@ public class DashBoardController {
         String finalUrl = Constants.FULL_SERVER_PATH + "/get-graphs-names";
         HttpClientUtil.runAsync(finalUrl, new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 System.out.println("Error: " + e);
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();//10
                 if (response.isSuccessful()) {
                     List<String> graphNames =
-                            HttpClientUtil.GSON.fromJson(
-                                    response.body().string(),
-                                    new TypeToken<List<String>>() {
-                                    }.getType());
-                    Platform.runLater(() -> graphListView.getItems().setAll(graphNames));
+                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType());
+                    if (graphNames.size() != graphListView.getItems().size())
+                        Platform.runLater(() -> graphListView.getItems().setAll(graphNames));
                 }
             }
         });
@@ -231,27 +353,28 @@ public class DashBoardController {
         String finalUrl = Constants.FULL_SERVER_PATH + "/usersHistory";
         HttpClientUtil.runAsync(finalUrl, new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 System.out.println("Error: " + e);
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();//16
+                if (response.code() == 200) {
                     updateUsersList(
-                            HttpClientUtil.GSON.fromJson(
-                                    response.body().string(),
-                                    new TypeToken<List<UserDto>>() {
+                            HttpClientUtil.GSON.fromJson(s, new TypeToken<List<UserDto>>() {
                                     }.getType()
-                            ));
+                            )
+                    );
                 }
             }
         });
     }
 
     private void updateUsersList(List<UserDto> usersNames) {
+        if (usersNames.size() == userHistoryObsList.size())
+            return;
         Platform.runLater(() -> {
-            //userHistoryObsList = usersTable.getItems();
             userHistoryObsList.clear();
             userHistoryObsList.addAll(usersNames);
         });
@@ -268,15 +391,15 @@ public class DashBoardController {
             Request request = buildRequest(selectedFile);
             HttpClientUtil.runAsync(request, new Callback() {
                 @Override
-                public void onFailure(Call call, IOException e) {
+                public void onFailure(@NotNull Call call, @NotNull IOException e) {
                     System.out.println(call.request().body().toString());
                     handleErrors(e, e.getMessage(), "Error loading graph");
                 }
 
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                    String errorMessage = response.body().string();//20
                     if (response.code() != 200) {
-                        String errorMessage = response.body().string();
                         handleErrors(null, errorMessage, "Error loading graph");
                     } else {
                         System.out.println("Success");
@@ -288,6 +411,13 @@ public class DashBoardController {
 
     @NotNull
     private Request buildRequest(File selectedFile) {
+
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/loadXml")
+                .newBuilder()
+                .addQueryParameter("username", userName)
+                .build()
+                .toString();
+
         RequestBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
                 .addFormDataPart(
                         "xml-file",
@@ -298,10 +428,7 @@ public class DashBoardController {
                 ).build();
 
         return new Request.Builder()
-                .url(HttpUrl.parse(Constants.FULL_SERVER_PATH + "/loadXml")
-                        .newBuilder()
-                        .build()
-                        .toString())
+                .url(finalUrl)
                 .method("POST", body)
                 .build();
     }
@@ -318,21 +445,14 @@ public class DashBoardController {
 
 
     // ---------------------------------------------- control panel --------------------------------------------------//
-    @FXML
-    void onGoToGraphBtnClicked(ActionEvent event) {
-
-    }
-
     public void goToGraph(String graphName) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/fxml/mainScreen.fxml"));
             Parent root = loader.load();
             ControlPanelController graphController = loader.getController();
-            graphController.setControlPanel(graphName);
-            Stage stage = new Stage();
-            stage.setTitle(graphName + " Control Panel");
-            stage.setScene(new Scene(root));
-            stage.show();
+            graphController.setControlPanel(graphName, dashboardScrollPane, userName);
+            graphController.setDashboardController(this);
+            ((Stage) dashboardScrollPane.getScene().getWindow()).setScene(new Scene(root));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -340,18 +460,11 @@ public class DashBoardController {
     // ---------------------------------------------- control panel --------------------------------------------------//
 
 
-    public void handleErrors(Exception e, String bodyMessage, String headerMessage) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error occurred");
-            alert.setHeaderText(headerMessage);
-            if (e != null) {
-                alert.setContentText(e.getMessage());
-            } else {
-                alert.setContentText(bodyMessage);
-            }
-            alert.showAndWait();
-        });
+    public void setAppController(ControlPanelController controlPanelController) {
+        this.controlPanelController = controlPanelController;
     }
 
+    public void setDashBoardController(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+    }
 }

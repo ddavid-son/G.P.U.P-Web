@@ -149,9 +149,7 @@ public class GraphTableViewController {
             checkBox.selectedProperty().addListener((ov, old_val, new_val) ->
                     arg0.getValue().setIsSelected(new_val));
 
-            CB.selectedProperty().addListener((ov, old_val, new_val) -> {
-                checkBox.selectedProperty().setValue(new_val);
-            });
+            CB.selectedProperty().addListener((ov, old_val, new_val) -> checkBox.selectedProperty().setValue(new_val));
 
             return new SimpleObjectProperty<>(checkBox);
         });

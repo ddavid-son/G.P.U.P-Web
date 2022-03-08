@@ -18,7 +18,8 @@ public class LoadXmlServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        String userName = ServletUtils.getCookie(request, "username");
+        String userName = request.getParameter("username");
+
         if (userName != null && !userName.isEmpty()) {
             Engine engine = new Execution(userName);
             try {

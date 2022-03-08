@@ -52,6 +52,8 @@ public class ClientLogin extends HttpServlet implements ServletContextListener {
         if (usernameFromSession == null) {
             String usernameFromParameter = request.getParameter(Constants.USERNAME);
             String usernameRoleParameter = request.getParameter(Constants.USER_ROLE);
+            String numberOfThreadsAvailableToWorker = request.getParameter(Constants.NUMBER_OF_THREADS);
+
             if (usernameFromParameter == null || usernameFromParameter.isEmpty() ||
                     usernameRoleParameter == null || usernameRoleParameter.isEmpty()) {
                 response.setStatus(HttpServletResponse.SC_CONFLICT);
@@ -68,12 +70,12 @@ public class ClientLogin extends HttpServlet implements ServletContextListener {
                         userManager.addUser(usernameFromParameter);
                         request.getSession(true).setAttribute(Constants.USERNAME, usernameFromParameter);
                         response.setStatus(HttpServletResponse.SC_OK);
-                        response.addCookie(new Cookie("username", usernameFromParameter));
                         saveUserInEngine(request, usernameFromParameter, usernameRoleParameter);
                     }
                 }
             }
         } else {
+            // todo: figure out why this is here
             response.setStatus(HttpServletResponse.SC_OK);
         }
     }

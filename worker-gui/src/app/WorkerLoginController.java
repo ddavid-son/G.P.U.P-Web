@@ -5,6 +5,9 @@ import app.Utils.HttpUtil;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -19,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.Locale;
 
 public class WorkerLoginController {
 
@@ -40,7 +45,7 @@ public class WorkerLoginController {
     public void onLoginBtnClicked(ActionEvent actionEvent) {
 
         int threads = threadsSpinner.getValue();
-        String userName = userNameTF.getText();
+        String userName = userNameTF.getText().trim();
 
         if (!assertParameters(threads, userName)) {
             FXUtil.handleErrors(null,
@@ -55,7 +60,7 @@ public class WorkerLoginController {
                         Constants.FULL_SERVER_PATH + "/client-login")
                 .newBuilder()
                 .addQueryParameter("threads", String.valueOf(threads))
-                .addQueryParameter("userName", userName)
+                .addQueryParameter("username", userName)
                 .addQueryParameter("role", "worker")
                 .build()
                 .toString();
@@ -68,13 +73,15 @@ public class WorkerLoginController {
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();//3
                 if (response.code() != 200) {
                     FXUtil.handleErrors(
                             null,
                             "couldn't log in due to authentication errors pleas try again later",
                             "Error while logging in");
+                } else {
+                    Platform.runLater(() -> switchToDashBoard(userName));
                 }
-                Platform.runLater(() -> switchToDashBoard());
             }
         });
     }
@@ -84,9 +91,19 @@ public class WorkerLoginController {
                 userName != null && !userName.isEmpty();
     }
 
-    private void switchToDashBoard() {
-        System.out.println("switching to dashboard");
-        System.out.println("number of threads to worker:" + threadsSpinner.getValue() + "\n worker name: " + userNameTF.getText());
+    private void switchToDashBoard(String username) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader();
+            URL url = getClass().getResource(Constants.DASHBOARD_FXML);
+            fxmlLoader.setLocation(url);
+            Parent root = fxmlLoader.load(url.openStream());
+            Scene scene = new Scene(root);
+            WorkerDashboardController controller = fxmlLoader.getController();
+            controller.setDashBoard(username, primaryStage, threadsSpinner.getValue());
+            primaryStage.setScene(scene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setMainScreen(Stage primaryStage) {

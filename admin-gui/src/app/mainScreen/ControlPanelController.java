@@ -1,10 +1,10 @@
 package app.mainScreen;
 
-import app.graphTableView.GraphTableViewController;
-/*import app.circleDisplay.CircleDisplayController;
+import app.circleDisplay.CircleDisplayController;
+import app.dashboard.DashBoardController;
 import app.findAllPaths.FindAllPathsController;
+import app.graphTableView.GraphTableViewController;
 import app.relatedView.RelatedViewController;
-import app.serialSet.SerialSetController;*/
 import argumentsDTO.*;
 import argumentsDTO.CommonEnums.*;
 import app.sideMenu.SideMenuController;
@@ -19,25 +19,24 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 import resources.Constants;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
+
+import static app.util.FXUtils.handleErrors;
 
 public class ControlPanelController {
 
@@ -59,13 +58,14 @@ public class ControlPanelController {
     public List<String> targetFromPreviousRun;
     public String themeCSSPath = "/resources/css/theme1.css";
 
-    private File activeFile;
-    /*private ScrollPane serialSetScreen;
-    private final Engine execution = new Execution();
     private final String FIND_ALL_PATHS_FXML_FILE = "/resources/fxml/findAllPaths.fxml";
     private final String CIRCLE_DISPLAY_FXML_FILE = "/resources/fxml/circleDisplay.fxml";
-*/
+    private ScrollPane dashboard;
+    private String userName;
+    private DashBoardController dashBoardController;
 
+
+    // ---------------------------------------------------- Utils --------------------------------------------------- //
     public void setThemeCSSPath(String themeCSSPath) {
         this.themeCSSPath = themeCSSPath;
         sideMenuComponentController.setThemeCSSPath(themeCSSPath);
@@ -74,6 +74,10 @@ public class ControlPanelController {
         // set new css to this scene
         graphTableViewComponent.getStylesheets().clear();
         graphTableViewComponent.getStylesheets().add(themeCSSPath);
+    }
+
+    public String getUsername() {
+        return userName;
     }
 
     @FXML
@@ -85,13 +89,27 @@ public class ControlPanelController {
         }
     }
 
+    public Node getIcon(String resourceName) {
+        return getIcon(resourceName, 50);
+    }
+
+    public Node getIcon(String resourceName, int size) {
+        Image image = new Image("/resources/icons" + resourceName);
+        ImageView imageView = new ImageView(image);
+        imageView.setFitHeight(size);
+        imageView.setFitWidth(size);
+        return imageView;
+    }
+
     protected void setAllComponentsToDisabled() {
         graphTableViewComponentController.setAllComponentsToDisabled();
         sideMenuComponentController.setAllComponentsToDisabled(false);
     }
 
-    public void setControlPanel(String engineName) {
+    public void setControlPanel(String engineName, ScrollPane dashboard, String userName) {
         this.engineName = engineName;
+        this.dashboard = dashboard;
+        this.userName = userName;
         fetchDTOsForAdmin();
     }
 
@@ -113,6 +131,13 @@ public class ControlPanelController {
         }
     }
 
+    public void goToDashboard() {
+        ((Stage) mainScreen.getScene().getWindow()).setScene(dashboard.getScene());
+    }
+    // ---------------------------------------------------- Utils --------------------------------------------------- //
+
+
+    // -------------------------------------------------- EX2 ADDONS ------------------------------------------------ //
     private void fetchDTOsForAdmin() {
         String finalUrl = Constants.FULL_SERVER_PATH + "/get-dtos-for-admin" + "?graph-name=" + engineName;
 
@@ -123,13 +148,13 @@ public class ControlPanelController {
 
         HttpClientUtil.runAsync(request, new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 handleErrors(e, "", "Error fetching  data");
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.code() != 200) {
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.code() != 200) {//14
                     String errorMessage = response.body().string();
                     handleErrors(null, errorMessage, "Error fetching execution data");
                 } else {
@@ -149,35 +174,17 @@ public class ControlPanelController {
         });
     }
 
-    public File getActiveFile() {
-        return activeFile;
-    }
-
-    public void handleErrors(Exception e, String bodyMessage, String headerMessage) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error occurred");
-            alert.setHeaderText(headerMessage);
-            if (e != null) {
-                alert.setContentText(e.getMessage());
-            } else {
-                alert.setContentText(bodyMessage);
-            }
-            alert.showAndWait();
-        });
-    }
-
-    /*public void findAllPaths() {
+    public void findAllPaths() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource(FIND_ALL_PATHS_FXML_FILE);
             fxmlLoader.setLocation(url);
             Parent root = fxmlLoader.load(url.openStream());
             FindAllPathsController PathFindPopUpWindow = fxmlLoader.getController();
-            PathFindPopUpWindow.setAppController(this);
-
             root.getStylesheets().add(themeCSSPath);
-            PathFindPopUpWindow.loadComboBoxes(execution.getAllTargetNames(), execution);
+
+            PathFindPopUpWindow.setAppController(this);
+            getAllTargets(engineName, PathFindPopUpWindow::loadComboBoxes);
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -187,20 +194,50 @@ public class ControlPanelController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
+    }
 
-    /*public void findAllCircles() {
+    public void getAllTargets(String engineName, Consumer<List<String>> allTargetsConsumer) {
+
+        String finalUrl = HttpUrl.parse(
+                        Constants.FULL_SERVER_PATH + "/get-all-targets")
+                .newBuilder()
+                .addQueryParameter("engine-name", engineName)
+                .toString();
+
+
+        HttpClientUtil.runAsync(finalUrl, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Error fetching targets");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String s = response.body().string();//7
+                if (response.code() != 200) {
+                    handleErrors(null,
+                            "Could not acquire targets, please try again",
+                            "Error fetching targets");
+                } else {
+                    Platform.runLater(() ->
+                            allTargetsConsumer.accept(HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                            }.getType())));
+                }
+            }
+        });
+    }
+
+    public void findAllCircles() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource(CIRCLE_DISPLAY_FXML_FILE);
             fxmlLoader.setLocation(url);
             Parent root = fxmlLoader.load(url.openStream());
             CircleDisplayController circleDisplay = fxmlLoader.getController();
-            circleDisplay.setAppController(this);
 
+            circleDisplay.setAppController(this, engineName);
+            getAllTargets(engineName, circleDisplay::displayCircles);
             root.getStylesheets().add(themeCSSPath);
-            circleDisplay.displayCircles(execution.getAllTargetNames(), execution);
-
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -211,30 +248,18 @@ public class ControlPanelController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
-
-    public Node getIcon(String resourceName) {
-        return getIcon(resourceName, 50);
     }
 
-    public Node getIcon(String resourceName, int size) {
-        Image image = new Image("/resources" + resourceName);
-        ImageView imageView = new ImageView(image);
-        imageView.setFitHeight(size);
-        imageView.setFitWidth(size);
-        return imageView;
-    }
-
-    /*public void displayRelated() {
+    public void displayRelated() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader();
             URL url = getClass().getResource("/resources/fxml/relatedView.fxml");
             fxmlLoader.setLocation(url);
             Parent root = fxmlLoader.load(url.openStream());
             RelatedViewController relatedViewController = fxmlLoader.getController();
-            relatedViewController.setAppController(this, execution);
+            relatedViewController.setAppController(this);
 
-            relatedViewController.loadTargetList();
+            getAllTargets(engineName, relatedViewController::loadTargetList);
             root.getStylesheets().add(themeCSSPath);
 
             Stage stage = new Stage();
@@ -245,7 +270,9 @@ public class ControlPanelController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
+    }
+    // -------------------------------------------------- EX2 ADDONS ------------------------------------------------ //
+
 
     // -------------------------------------------------task methods-------------------------------------------------- //
     public boolean taskHasTargetsSelected() {
@@ -260,57 +287,124 @@ public class ControlPanelController {
         return true;
     }
 
-/*    public Engine getExecution() {
+    public String getEngineName() {
+        return engineName;
+    }
 
-        return execution;
-    }*/
 
     public void runTask(TaskArgs taskArgs) {
-
         List<String> targetNames = graphTableViewComponentController.getSelectedTargetNames();
         if (taskArgs.isWhatIf()) {
-            targetNames = getAllWhatIfResults(targetNames, taskArgs.getRelationType());
+            targetNames = fetchWhatIfResults(targetNames, taskArgs.getRelationType());
         }
         targetFromPreviousRun = targetNames; // here for the visibility of Incremental button
         taskArgs.getTargetsSelectedForGraph().addAll(targetNames);
-        goToTaskView(taskArgs);
-        taskViewController.delegateExecutionOfTaskToAnotherThread(taskArgs);
+        delegateExecutionOfTaskToAnotherThread(taskArgs);
     }
 
-    private List<String> getAllWhatIfResults(List<String> targetNames, RelationType relationType) {
-        List<String> whatIfResult = new ArrayList<>();
-        //targetNames.forEach(targetName -> whatIfResult.addAll(execution.getWhatIf(targetName, relationType).getAllRelated()));
-        targetNames.addAll(whatIfResult);
-        return targetNames.stream().distinct().collect(Collectors.toList());
+    public void delegateExecutionOfTaskToAnotherThread(TaskArgs taskArgs) {
+        String taskType = taskArgs.getTaskType().toString();
+
+        String finalUrl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/create-task")
+                .newBuilder()
+                .addQueryParameter("task-type", taskType)
+                .build()
+                .toString();
+
+        RequestBody requestBody = getRequestBody(taskArgs);
+
+        Request request = new Request.Builder()
+                .url(finalUrl)
+                .post(requestBody)
+                .build();
+
+        HttpClientUtil.runAsync(request, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                handleErrors(e, "", "Error! could not create the task");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                String responseBody = response.body().string();//19
+                if (!response.isSuccessful()) {
+                    handleErrors(null, responseBody, "Error! could not create the task");
+                } else {
+                    // update label with success info
+                }
+            }
+        });
     }
 
-    public boolean currentSelectedTargetsAreTheSameAsPreviousRun() {
-        List<String> targetNames = graphTableViewComponentController.getSelectedTargetNames();
-        return targetNames.equals(targetFromPreviousRun);
-        //todo: this is not accurate when the order of the list is changed(maybe because of sorting option of the table)
-    }
-
-    public void copyTextToClipboard(String text) {
-        Clipboard clipboard = Clipboard.getSystemClipboard();
-        ClipboardContent content = new ClipboardContent();
-        content.putString(text);
-        clipboard.setContent(content);
-    }
-
-    public void openFile(String imagePath) {
-        try {
-            Desktop.getDesktop().open(new File(imagePath));
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
+    @NotNull
+    private RequestBody getRequestBody(TaskArgs taskArgs) {
+        RequestBody rb;
+        if (taskArgs.getTaskType() == TaskType.COMPILATION) {
+            CompilationArgs ca = (CompilationArgs) taskArgs;
+            rb = RequestBody.create(
+                    HttpClientUtil.GSON.toJson(ca, new TypeToken<CompilationArgs>() {
+                    }.getType()),
+                    MediaType.parse("application/json"));
+        } else {
+            SimulationArgs ca = (SimulationArgs) taskArgs;
+            rb = RequestBody.create(
+                    HttpClientUtil.GSON.toJson(ca, new TypeToken<SimulationArgs>() {
+                    }.getType()),
+                    MediaType.parse("application/json"));
         }
+        return rb;
+    }
+
+
+    private List<String> fetchWhatIfResults(List<String> targetNames, RelationType relationType) {
+        String finalURl = HttpUrl.parse(Constants.FULL_SERVER_PATH + "/get-what-if")
+                .newBuilder()
+                .addQueryParameter("engine-name", engineName)
+                .addQueryParameter("relation-type", relationType.toString())
+                .build()
+                .toString();
+
+        RequestBody body = RequestBody.create(
+                HttpClientUtil.GSON.toJson(targetNames),
+                MediaType.parse("application/json")
+        );
+
+        Request request = new Request.Builder()
+                .url(finalURl)
+                .post(body)
+                .build();
+
+        try {
+            Response response = HttpClientUtil.HTTP_CLIENT.newCall(request).execute();
+            return getAllWhatIfResultsFromResponse(response);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    private List<String> getAllWhatIfResultsFromResponse(Response response) {
+        String s = "";
+        try {
+            if (response.isSuccessful()) {
+                s = response.body().string();
+                return HttpClientUtil.GSON.fromJson(s, new TypeToken<List<String>>() {
+                }.getType());
+            }
+            handleErrors(null,
+                    "http call ended unsuccessfully: error code " + response.code() + "\n message: " + s,
+                    "Error getting what if results");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new ArrayList<>();
     }
     // -------------------------------------------------task methods------------------------------------------------- //
 
     //----------------------------------------------- task view ----------------------------------------------------- //
     public void goToTaskView(TaskArgs taskArgs) {
-        if (!taskArgs.isIncremental())
-            createNewTaskController(taskArgs);
-        // replace the center of the main screen with the task view
+        createNewTaskController(taskArgs);
         mainScreen.setCenter(taskViewScreen);
     }
 
@@ -329,40 +423,13 @@ public class ControlPanelController {
             taskViewController = fxmlLoader.getController();
 
             root.getStylesheets().add(themeCSSPath);
-            taskViewController.setAppController(this/*, execution*/);
+            //taskViewController.setAppController(this);
             taskViewController.setTaskView(taskArgs);
             this.taskViewScreen = (ScrollPane) root;
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-/*    public void showSerialSetSummary() {
-        if (serialSetScreen == null)
-            createSerialSet();
-        if (mainScreen.getRight() == serialSetScreen)
-            mainScreen.setRight(null);
-        else
-            mainScreen.setRight(serialSetScreen);
-    }
-
-    private void createSerialSet() {
-        try {
-            URL url = getClass().getResource("/resources/fxml/serialSetView.fxml");
-            FXMLLoader fxmlLoader = new FXMLLoader(url);
-            fxmlLoader.setLocation(url);
-            Parent root = fxmlLoader.load();
-            SerialSetController serialSetController = fxmlLoader.getController();
-
-            root.getStylesheets().add(themeCSSPath);
-            serialSetController.setAppController(this, execution);
-            serialSetController.setSerialSet();
-
-            this.serialSetScreen = (ScrollPane) root;
-        } catch (IOException e) {
-            //e.printStackTrace();
-        }
-    }*/
 
     public void setTaskViewController(TaskViewController taskViewController) {
         this.taskViewController = taskViewController;
@@ -372,20 +439,10 @@ public class ControlPanelController {
         mainScreen.setCenter(graphTableViewComponent);
     }
 
-    public void resetListOnTaskView(boolean isIncremental) {
-        taskViewController.resetAllLists(isIncremental);
-    }
 
-    public void resumeExecution() {
-        //execution.resumeTask();
-    }
-
-    public void pauseExecution() {
-        //execution.pauseTask();
-    }
-
-    public void setNumberOfThreads(Integer value) {
-        //execution.setNumberOfThreads(value);
+    public void setDashboardController(DashBoardController dashBoardController) {
+        this.dashBoardController = dashBoardController;
+        dashBoardController.setAppController(this);
     }
     //----------------------------------------------- task view ----------------------------------------------------- //
 }

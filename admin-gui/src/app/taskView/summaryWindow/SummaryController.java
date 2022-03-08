@@ -57,7 +57,7 @@ public class SummaryController {
                                  ObservableList<StackPane> finished, String taskType, long duration) {
         int success = 0, warning = 0;
         for (StackPane pane : finished) {
-            if (((Circle) pane.getChildren().get(0)).getFill() == Paint.valueOf("GREEN"))
+            if (((Circle) pane.getChildren().get(0)).getFill() == Paint.valueOf("LIMEGREEN"))
                 success++;
             else
                 warning++;
@@ -74,7 +74,7 @@ public class SummaryController {
         ObservableList<String> succ = FXCollections.observableArrayList();
         ObservableList<String> warn = FXCollections.observableArrayList();
         for (StackPane pane : finished) {
-            if (((Circle) pane.getChildren().get(0)).getFill() == Paint.valueOf("GREEN"))
+            if (((Circle) pane.getChildren().get(0)).getFill() == Paint.valueOf("LIMEGREEN"))
                 succ.add(pane.getId());
             else
                 warn.add(pane.getId());
