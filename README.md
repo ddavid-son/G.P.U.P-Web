@@ -12,6 +12,7 @@
 - [How To Use Worker](#worker-client)
 - [My Info](#my-info)
 - [See the Desktop version](https://github.com/ddavid-son/GPUP-GUI)
+- [Photos](#photos)
 ***
 
 
@@ -64,6 +65,30 @@ The platform enables the Worker to enroll into tasks as he sees fit, and get wor
 
 [Back To The Top](#table-of-contents)
 ***
+
+###Photos
+
+Admin Dashboard:<br>
+<img src="https://i.postimg.cc/cJGCPw7c/Admin-Dashboard.png"><br>
+
+Admin graph control panel:<br>
+<img src="https://i.postimg.cc/B6dxzX69/graph-control-panel.png"><br>
+
+Compilation Task Parametrs form:<br>
+<img src="https://i.postimg.cc/nLSKvdfL/comp-task-form.png"><br>
+
+Simulation Task Parameters form:<br>
+<img src="https://i.postimg.cc/85FRwhTm/sim-task-form.png">
+
+Admin Task Control Panel:<br>
+<img src="https://i.postimg.cc/jq767Qgs/task-control-panel.png"><br>
+
+Worker Dashboard:<br>
+<img src="https://i.postimg.cc/fymxQDt3/worker-dashboard.png"><br>
+
+Woreker data center screen:<br>
+<img src="https://i.postimg.cc/8PgRBJ9L/worker-data-center.png"><br>
+
 
 #### Technologies
 
