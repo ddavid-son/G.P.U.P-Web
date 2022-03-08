@@ -67,7 +67,7 @@ The platform enables the Worker to enroll into tasks as he sees fit, and get wor
 #### Technologies
 
 - <B>IntelliJ</B> - While building this app I used this wonderful IDE
-- <B>Scene Builder</B> - While Building the UI I have used this toll extensively to design and built the skeleton of the screens.
+- <B>Scene Builder</B> - While Building the UI I have used this tool extensively to design and built the skeleton of the screens.
 - <B>Apache Tomcat</B> - this application runs on apache tomcat server.
 - <B>GSON</B> - GSON helped allot in sending, receiving and converting objects from java to json and vice versa.
 - <B>OKHttpClient</B> - Is the tool I choose to use as my http client
