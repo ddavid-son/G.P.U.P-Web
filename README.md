@@ -11,6 +11,7 @@
 - [How To Use Admin](#admin-client)
 - [How To Use Worker](#worker-client)
 - [My Info](#my-info)
+- [See the Desktop version](https://github.com/ddavid-son/GPUP-GUI)
 ***
 
 
