@@ -66,7 +66,7 @@ The platform enables the Worker to enroll into tasks as he sees fit, and get wor
 [Back To The Top](#table-of-contents)
 ***
 
-###Photos
+### Photos
 
 Admin Dashboard:<br>
 <img src="https://i.postimg.cc/cJGCPw7c/Admin-Dashboard.png"><br>
