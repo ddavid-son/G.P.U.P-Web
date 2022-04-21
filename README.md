@@ -104,6 +104,17 @@ Woreker data center screen:<br>
 ***
 
 #### Installation
+#### Server:
+- Drop the WAR file inside the webapp folder (located in the tomact folder)
+- Go to the bin folder and double click the startup batch file
+- Alternativly you can run these 2 commands from anywhere(assuming tomcat is located in c: dir):
+- ``` cd c:/apache-tomcat-10.0.16/bin ``` (assuming you are using tomcat 10.0.16, just change according to yur version)
+- ``` startup ```
+
+#### Admin/worker:
+- Extract zip
+- Duoble click the RunProg batch file
+
 [Back To The Top](#table-of-contents)
 ***
 
