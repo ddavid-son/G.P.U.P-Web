@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: app.mainScreen.AdminApp
-Class-Path: kotlin-stdlib-1.4.10.jar okio-2.8.0.jar okhttp-4.9.1.jar ann
- otations-13.0.jar gson-2.1.jar
-
