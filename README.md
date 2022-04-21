@@ -10,9 +10,9 @@
 - [How To Use](#how-to-use)
 - [How To Use Admin](#admin-client)
 - [How To Use Worker](#worker-client)
-- [Installation](#installation)
 - [My Info](#my-info)
 - [See the Desktop version](https://github.com/ddavid-son/GPUP-GUI)
+- [Installation](#installation)
 - [Photos](#photos)
 ***
 
