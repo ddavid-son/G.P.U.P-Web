@@ -105,9 +105,9 @@ Woreker data center screen:<br>
 
 #### Installation
 #### Server:
-- Drop the WAR file inside the webapp folder (located in the tomact folder)
-- Go to the bin folder and double click the startup batch file
-- Alternativly you can run these 2 commands from anywhere(assuming tomcat is located in c: dir):
+- Drop the WAR file inside the webapps folder located in the tomact folder(usually c:/apache-tomcat-10.0.X/webapps)
+- Go to the bin folder and double click the startup batch file(in the same dir as webapps)
+- Alternativ to second step - you can run these 2 commands from anywhere(assuming tomcat is located in c: dir):
 - ``` cd c:/apache-tomcat-10.0.16/bin ``` (assuming you are using tomcat 10.0.16, just change according to yur version)
 - ``` startup ```
 
